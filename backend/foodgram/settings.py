@@ -1,11 +1,14 @@
+from datetime import timedelta
 from pathlib import Path
 
 from django.core.management.utils import get_random_secret_key
 
+from decouple import config
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = get_random_secret_key()
+SECRET_KEY = config('SECRET_KEY', get_random_secret_key())
 # SECRET_KEY = 'django-insecure-z$b0pp64qkh#7dz0zq1out*p+&xkszom+-t+1lcsd6=*-hgc_b'
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -28,6 +31,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'django_filters',
     'users',
+    'api,'
 ]
 
 MIDDLEWARE = [
