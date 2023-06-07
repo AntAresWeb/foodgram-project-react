@@ -1,31 +1,42 @@
-from django.contrib.auth.models import AbstractUser, UserManager
-from django.db import models
+from django.contrib.auth.models import AbstractUser, BaseUserManager
+
+
+class UserManager(BaseUserManager):
+    """ Создает и возвращает пользователя с емэйлом, паролем и именем. """
+    def create_user(self, username, email, password=None):
+        if username is None:
+            raise TypeError('Имя пользователя обязательно.')
+
+        if email is None:
+            raise TypeError('Электронная почта обязательна.')
+
+        user = self.model(username=username, email=self.normalize_email(email))
+        user.set_password(password)
+        user.save()
+
+        return user
+
+    def create_superuser(self, username, email, password):
+        """ Создает и возввращет пользователя с привилегиями суперадмина. """
+        if password is None:
+            raise TypeError('Нужно обязательно указать пароль.')
+
+        user = self.create_user(username, email, password)
+        user.is_superuser = True
+        user.is_staff = True
+        user.save()
+
+        return user
 
 
 class User(AbstractUser):
-    USER = 'user'
-    MODERATOR = 'moderator'
-    ADMIN = 'admin'
-    CHIOCE_ROLE = [
-        (USER, 'Пользователь'),
-        (MODERATOR, 'Модератор'),
-        (ADMIN, 'Администратор'),
-    ]
-    REQUIRED_FIELDS = ["email", "password"]
-    confirmation_code = models.CharField(verbose_name='Код подтверждения',
-                                         max_length=40, null=True, blank=True)
+    REQUIRED_FIELDS = ('email', 'username', 'first_name',
+                       'last_name', 'password',)
 
     objects = UserManager()
 
     def __str__(self):
         return self.username
-
-    def save(self, *args, **kwargs):
-        if self.role == self.USER or self.role == self.MODERATOR:
-            self.is_staff = False
-        if self.role == self.ADMIN or self.is_superuser:
-            self.is_staff = True
-        super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = 'Пользователь'
