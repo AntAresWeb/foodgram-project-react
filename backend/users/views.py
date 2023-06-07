@@ -9,22 +9,38 @@ from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from models import User
+from .models import User
+from .serializers import (UserListSerializer,
+                          UserMeSerializer,
+                          UserSignupSerializer,
+                          UserSerializer,
+                          UserTokenSerializer)
 
 
 class UserViewSet(mixins.CreateModelMixin,
-                   mixins.ListModelMixin,
-                   viewsets.GenericViewSet):
+                  mixins.ListModelMixin,
+                  viewsets.GenericViewSet):
     queryset = User.objects.all()
-    serializer_class = UserSerialiser
-    permission_classes = (IsAdminOrReadOnly,)
+    permission_classes = (AllowAny,)
     filter_backends = (filters.SearchFilter,)
-    search_fields = ('username',)
-    permission_classes = (IsAdminUser,)
     lookup_field = 'username'
-    filter_backends = (filters.SearchFilter,)
     search_fields = ('username',)
-    http_method_names = ('get', 'post', 'patch', 'delete')
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return UserListSerializer
+        else:
+            return UserSerializer
+
+
+class UserProfileViewSet(mixins.CreateModelMixin,
+                         mixins.ListModelMixin,
+                         viewsets.GenericViewSet):
+    queryset = User.objects.all()
+    permission_classes = (AllowAny,)
+    filter_backends = (filters.SearchFilter,)
+    lookup_field = 'username'
+    search_fields = ('username',)
 
     def get_serializer(self):
         if self.request.method == 'GET':
@@ -33,7 +49,20 @@ class UserViewSet(mixins.CreateModelMixin,
             return UserSerializer
 
 
-class UserMeDetailUpdateAPIView(views.APIView):
+class SetPasswordView(views.APIView):
+    ...
+
+
+class TokenLoginView(views.APIView):
+    ...
+
+
+class TokenLogoutView(views.APIView):
+    ...
+
+
+class UserMeViewSet(mixins.ListModelMixin,
+                 viewsets.GenericViewSet):
     permission_classes = (IsAuthenticated,)
     serializer_class = UserMeSerializer
     lookup_field = 'username'

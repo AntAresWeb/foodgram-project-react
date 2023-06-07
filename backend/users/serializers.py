@@ -1,18 +1,15 @@
-from datetime import datetime
-
-from django.shortcuts import get_object_or_404
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
-from api.utils import name_is_valid
-from models import User
+from .models import User
+from .utils import name_is_valid
 
 
 class UserListSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('username', 'email', 'first_name',
-                  'last_name', 'bio', 'role')
-        lookup_field = 'username'
+        fields = ('email', 'id', 'username', 'first_name',
+                  'last_name', 'is_subscribed',)
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -101,4 +98,3 @@ class UserTokenSerializer(serializers.Serializer):
         if not name_is_valid(value):
             raise serializers.ValidationError('Содержит недопустимые символы.')
         return value
-                               

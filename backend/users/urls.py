@@ -3,18 +3,19 @@ from rest_framework import routers
 
 from users import views
 
+print('Есть контакт!')
+
 router = routers.DefaultRouter()
 
-router.register(r'users/me/', views.CommentViewSet, basename='comment')
-router.register(r'users/me/', views.CommentViewSet, basename='comment')
-router.register(r'users/(?P<id>\d+)/', views.CommentViewSet, basename='comment')
-router.register('users/', views.UserViewSet, basename='user')
+router.register(r'users/me', views.UserMeViewSet, basename='user_me')
+router.register(r'users/(?P<id>\d+)',
+                views.UserProfileViewSet, basename='user_profile')
+router.register(r'users', views.UserViewSet, basename='users')
 
 urlpatterns = [
-    path('auth/signup/', views.AuthSignupView.as_view(), name='signup'),
-    path('auth/token/', views.AuthTokenView.as_view(), name='token'),
-    path('users/me/',
-         views.UserMeDetailUpdateAPIView.as_view(), name='userme'),
-    path('drf-auth/', include('rest_framework.urls')),
+    path('users/set_password/',
+         views.SetPasswordView.as_view(), name='set_password'),
+    path('auth/token/login/', views.TokenLoginView.as_view(), name='login'),
+    path('auth/token/logout/', views.TokenLogoutView.as_view(), name='logout'),
     path('', include(router.urls)),
 ]

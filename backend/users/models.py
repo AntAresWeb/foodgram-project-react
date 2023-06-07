@@ -30,8 +30,6 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractUser):
-    REQUIRED_FIELDS = ('email', 'username', 'first_name',
-                       'last_name', 'password',)
 
     objects = UserManager()
 
