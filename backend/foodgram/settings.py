@@ -9,10 +9,8 @@ from decouple import config
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = config('SECRET_KEY', get_random_secret_key())
-# SECRET_KEY = 'django-insecure-z$b0pp64qkh#7dz0zq1out*p+&xkszom+-t+1lcsd6=*-hgc_b'
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config('DEBUG', True)
 
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 

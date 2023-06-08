@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.core.validators import MinValueValidator
 
 User = get_user_model()
 
@@ -16,18 +17,53 @@ class Ingredient(models.Model):
 
 
 class Content(models.Model):
-    igredient = models.ForeignKey(Ingredient, )
+    igredient = models.ForeignKey(
+        Ingredient, on_delete=models.CASCADE)
     recipe = models.ForeignKey(
         'Recipe', related_name='content', on_delete=models.CASCADE)
-    amount = models.IntegerField(min=1)
+    amount = models.IntegerField(validators=[MinValueValidator])
 
 
 class Subcscribe(models.Model):
-    ...
+    siteuser = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Подписчик',
+    )
+    subscribe = models.ManyToManyField(
+        User,
+        blank=True,
+        related_name='subscruber',
+        verbose_name='Подписка на авторов'
+    )
 
 
 class Favorite(models.Model):
-    ...
+    siteuser = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Пользователь',
+    )
+    recipe = models.ManyToManyField(
+        'Recipe',
+        blank=True,
+        related_name='favorite',
+        verbose_name='Подборка рецептов'
+    )
+
+
+class Shoppingcart(models.Model):
+    siteuser = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Пользователь',
+    )
+    recipe = models.ManyToManyField(
+        'Recipe',
+        blank=True,
+        related_name='shopingcart',
+        verbose_name='Список рецептов для закупки ингредиентов'
+    )
 
 
 class Recipe(models.Model):
@@ -51,12 +87,6 @@ class Recipe(models.Model):
         blank=True,
         verbose_name='Список тегов'
     )
-    content = models.ManyToManyField(
-        Content,
-        related_name='recipe',
-        blank=True,
-        verbose_name='Состав набора ингредиентов'
-    )
     picture = models.ImageField(
         upload_to='recipes/images/',
         null=True,
@@ -68,21 +98,14 @@ class Recipe(models.Model):
         db_index=True
     )
     cooking_time = models.IntegerField(
-        min=1, verbose_name='Время приготовления'
+        validators=[MinValueValidator],
+        verbose_name='Время приготовления'
     )
 
     class Meta:
-        ordering = ('-year',)
-        verbose_name = 'Произведение'
-        verbose_name_plural = 'Произведения'
+        ordering = ('pub_date',)
+        verbose_name = 'Рецепт'
+        verbose_name_plural = 'Рецепты'
 
     def __str__(self):
         self.name
-
-
-class Shoppingcart(models.Model):
-    ...
-
-
-
-

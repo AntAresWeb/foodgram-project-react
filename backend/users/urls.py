@@ -3,8 +3,6 @@ from rest_framework import routers
 
 from users import views
 
-print('Есть контакт!')
-
 router = routers.DefaultRouter()
 
 router.register(r'users/me', views.UserMeViewSet, basename='user_me')
