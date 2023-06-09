@@ -19,6 +19,7 @@ from .serializers import (UserListSerializer,
 
 class UserViewSet(mixins.CreateModelMixin,
                   mixins.ListModelMixin,
+                  mixins.RetrieveModelMixin,
                   viewsets.GenericViewSet):
     queryset = User.objects.all()
     permission_classes = (AllowAny,)
@@ -31,6 +32,16 @@ class UserViewSet(mixins.CreateModelMixin,
             return UserListSerializer
         else:
             return UserSerializer
+
+    def create(self, request):
+        print(request)
+
+    def create(self, request):
+        print(request)
+
+    def retrive(self, request, pk=None):
+        print(pk)
+
 
 
 class UserProfileViewSet(mixins.CreateModelMixin,

@@ -11,12 +11,25 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 #from api.filters import TitleFilter
 #from api.permissions import IsAdminOrReadOnly, IsAuthorModeratorAdminOrReadOnly
-from api.serializers import IngredientSerialiser
-from essences.models import Ingredient
+from api.serializers import IngredientSerialiser, TagSerialiser
+from essences.models import Ingredient, Tag
 
 
-class IngredientViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+class IngredientViewSet(mixins.ListModelMixin,
+                        mixins.RetrieveModelMixin,
+                        viewsets.GenericViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerialiser
     permission_classes = (AllowAny,)
+    pagination_class = None
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('^name',)
 
+
+class TagViewSet(mixins.ListModelMixin,
+                 mixins.RetrieveModelMixin,
+                 viewsets.GenericViewSet):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerialiser
+    permission_classes = (AllowAny,)
+    pagination_class = None
