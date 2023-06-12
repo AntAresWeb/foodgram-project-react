@@ -1,3 +1,4 @@
+from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 
 
@@ -30,6 +31,14 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractUser):
+    email = models.EmailField(
+        ('email address'),
+        max_length=254,
+        unique=True,
+        error_messages={
+            'unique': ("Такой e-mail уже используеется другим пользователем."),
+        },
+    )
 
     objects = UserManager()
 
@@ -37,6 +46,8 @@ class User(AbstractUser):
         return self.username
 
     class Meta:
+        ordering = ('-id',)
+        unique_together = ('username', 'email',) 
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
         ordering = ('-id',)

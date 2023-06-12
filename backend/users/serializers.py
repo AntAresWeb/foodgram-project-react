@@ -1,58 +1,36 @@
-from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
-from .models import User
+from essences.models import Subscribe
+from users.models import User
 from .utils import name_is_valid
 
 
 class UserListSerializer(serializers.ModelSerializer):
+    is_subscribed = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = ('email', 'id', 'username', 'first_name',
                   'last_name', 'is_subscribed',)
 
+    def get_is_subscribed(self, obj):
+        user = self.context['request'].user
+        if user.is_authenticated is True:
+            return user.subscriber.filter(author=obj).exists()
+        else:
+            return False
+
 
 class UserSerializer(serializers.ModelSerializer):
-    '''Сериализер api/v1/users/'''
 
     class Meta:
         model = User
-        fields = ('username', 'email', 'first_name',
-                  'last_name', 'bio', 'role')
-        lookup_field = 'username'
+        fields = ('email', 'id', 'username', 'first_name',
+                  'last_name', 'password',)
         extra_kwargs = {
-            'email': {'required': True, 'max_length': 254},
-            'username': {'required': True, 'max_length': 150},
-            'first_name': {'required': True, 'max_length': 150},
-            'last_name': {'required': True, 'max_length': 150},
-            'password': {'required': True, 'max_length': 150},
+            'password': {'write_only': True},
+            'id': {'read_only': True}
         }
-        validators = [
-            serializers.UniqueTogetherValidator(
-                queryset=model.objects.all(),
-                fields=('username', 'email'),
-                message=("Пользователь с указанными именем или адресом есть.")
-            )
-        ]
-
-    def validate_username(self, value):
-        if not name_is_valid(value):
-            raise serializers.ValidationError('Содержит недопустимые символы.')
-        if isinstance(value, str) and len(value) == 0:
-            raise serializers.ValidationError('Имя указывать обязательно.')
-        return value
-
-    def validate_email(self, value):
-        if isinstance(value, str) and len(value) == 0:
-            raise serializers.ValidationError('e-mail указывать обязательно.')
-        try:
-            obj = self.Meta.model.objects.get(email=value)
-        except self.Meta.model.DoesNotExist:
-            return value
-        if self.instance and obj.id == self.instance.id:
-            return value
-        else:
-            raise serializers.ValidationError('Этот e-mail уже ииспользуется')
 
 
 class UserMeSerializer(serializers.ModelSerializer):

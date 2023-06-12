@@ -24,30 +24,32 @@ class Content(models.Model):
     amount = models.IntegerField(validators=[MinValueValidator])
 
 
-class Subcscribe(models.Model):
+class Subscribe(models.Model):
     siteuser = models.ForeignKey(
         User,
+        related_name='subscriber',
         on_delete=models.CASCADE,
         verbose_name='Подписчик',
     )
-    subscribe = models.ManyToManyField(
+    author = models.ForeignKey(
         User,
-        blank=True,
-        related_name='subscruber',
-        verbose_name='Подписка на авторов'
+        related_name='subscribe',
+        on_delete=models.CASCADE,
+        verbose_name='Подписка на автора'
     )
 
 
 class Favorite(models.Model):
     siteuser = models.ForeignKey(
         User,
+        related_name='favoriter',
         on_delete=models.CASCADE,
         verbose_name='Пользователь',
     )
-    recipe = models.ManyToManyField(
+    recipe = models.ForeignKey(
         'Recipe',
-        blank=True,
         related_name='favorite',
+        on_delete=models.CASCADE,
         verbose_name='Подборка рецептов'
     )
 

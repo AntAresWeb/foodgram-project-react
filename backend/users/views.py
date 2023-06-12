@@ -23,25 +23,15 @@ class UserViewSet(mixins.CreateModelMixin,
                   viewsets.GenericViewSet):
     queryset = User.objects.all()
     permission_classes = (AllowAny,)
-    filter_backends = (filters.SearchFilter,)
-    lookup_field = 'username'
-    search_fields = ('username',)
+#    filter_backends = (filters.SearchFilter,)
+#    lookup_field = 'username'
+#    search_fields = ('username',)
 
     def get_serializer_class(self):
         if self.request.method == 'GET':
             return UserListSerializer
-        else:
+        elif self.request.method == 'POST':
             return UserSerializer
-
-    def create(self, request):
-        print(request)
-
-    def create(self, request):
-        print(request)
-
-    def retrive(self, request, pk=None):
-        print(pk)
-
 
 
 class UserProfileViewSet(mixins.CreateModelMixin,
@@ -58,6 +48,12 @@ class UserProfileViewSet(mixins.CreateModelMixin,
             return UserListSerializer
         else:
             return UserSerializer
+
+    def get_queryset(self):
+        if self.request.method == 'GET':
+            return User.objects.subscribe.exist()
+        else:
+            return User.objects.all()
 
 
 class SetPasswordView(views.APIView):
