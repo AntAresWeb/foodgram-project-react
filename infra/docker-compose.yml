@@ -8,6 +8,11 @@ services:
 #      dockerfile: Dockerfile
     volumes:
       - ../frontend/:/app/result_build/
+  backend:
+    image: foodgram-backend
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
   nginx:
     image: nginx:1.22.1
     ports:

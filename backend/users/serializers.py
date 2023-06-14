@@ -1,6 +1,5 @@
 from rest_framework import serializers
 
-from essences.models import Subscribe
 from users.models import User
 from .utils import name_is_valid
 
@@ -33,25 +32,20 @@ class UserSerializer(serializers.ModelSerializer):
         }
 
 
-class UserMeSerializer(serializers.ModelSerializer):
+class PassordSerializer(serializers.Serializer):
+    new_password = serializers.CharField(max_length=150)
+    current_password = serializers.CharField(max_length=150)
 
     class Meta:
-        model = User
-        fields = ('username', 'email', 'first_name',
-                  'last_name', 'bio', 'role')
-        read_only_fields = ('role',)
-        extra_kwargs = {
-            'username': {'required': True, 'max_length': 150},
-            'email': {'required': True, 'max_length': 254},
-            'first_name': {'allow_blank': True, 'max_length': 150},
-            'last_name': {'allow_blank': True, 'max_length': 150},
-            'role': {'default': 'user'}
-        }
+        fields = ('new_password', 'current_password',)
 
-    def validate_username(self, value):
-        if not name_is_valid(value):
-            raise serializers.ValidationError('Содержит недопустимые символы.')
-        return value
+
+class LoginSerializer(serializers.Serializer):
+    password = serializers.CharField(max_length=150)
+    email = serializers.CharField(max_length=254)
+
+    class Meta:
+        fields = ('password', 'email',)
 
 
 class UserSignupSerializer(serializers.Serializer):
