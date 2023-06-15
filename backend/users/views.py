@@ -79,16 +79,8 @@ class TokenLogoutView(views.APIView):
     def post(self, request):
         if request.user.is_authenticated:
             user = get_object_or_404(User, pk=request.user.id)
-            user.
-
-        serializer = self.serializer_class(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            user = get_object_or_404(User,
-                                     email=serializer._validated_data['email'])
-            if user.check_password(
-               serializer.validated_data['password']):
-                refresh = RefreshToken.for_user(user)
-                token = str(refresh.access_token)
-                return Response(
-                    {'auth_token': token}, status=status.HTTP_204_NO_CONTENT)
+            RefreshToken.for_user(user)
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        else:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
 
