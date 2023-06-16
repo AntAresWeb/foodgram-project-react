@@ -1,11 +1,7 @@
-import uuid
-
-from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, mixins, status, views, viewsets
+from rest_framework import mixins, status, views, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -31,6 +27,13 @@ class UserViewSet(mixins.CreateModelMixin,
         elif self.request.method == 'POST':
             return UserSerializer
 
+    def get_permissions(self):
+        if self.action in ('set_password', 'me', 'retrieve',):
+            permission_classes = (IsAuthenticated,)
+        else:
+            permission_classes = (AllowAny,)
+        return [permission() for permission in permission_classes]
+
     @action(detail=False, methods=['get'])
     def me(self, request):
         self.object = get_object_or_404(User, pk=request.user.id)
@@ -39,11 +42,9 @@ class UserViewSet(mixins.CreateModelMixin,
 
     @action(detail=False, methods=['post'])
     def set_password(self, request):
-        user = get_object_or_404(User, pk=4)
+        user = get_object_or_404(User, pk=request.user.id)
         serializer = PassordSerializer(data=request.data)
         if serializer.is_valid():
-            print(serializer.validated_data['current_password'])
-            print(serializer.validated_data['new_password'])
             if user.check_password(
                serializer.validated_data['current_password']):
                 user.set_password(serializer.validated_data['new_password'])
@@ -64,23 +65,28 @@ class TokenLoginView(views.APIView):
         if serializer.is_valid(raise_exception=True):
             user = get_object_or_404(User,
                                      email=serializer._validated_data['email'])
-            if user.check_password(
-               serializer.validated_data['password']):
+            print(user) # can be deleted
+            password = serializer.validated_data['password']
+            print(password)
+            if user.check_password(password):
                 refresh = RefreshToken.for_user(user)
                 token = str(refresh.access_token)
                 return Response(
                     {'auth_token': token}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class TokenLogoutView(views.APIView):
     serializer_class = None
-    permission_classes = (AllowAny, )
+    permission_classes = (IsAuthenticated, )
 
     def post(self, request):
+        print(self.request.headers)
+        refresh_token = self.request.data.get('refresh_token')
+        print(refresh_token)
         if request.user.is_authenticated:
             user = get_object_or_404(User, pk=request.user.id)
             RefreshToken.for_user(user)
             return Response(status=status.HTTP_204_NO_CONTENT)
         else:
             return Response(status=status.HTTP_401_UNAUTHORIZED)
-

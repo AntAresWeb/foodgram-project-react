@@ -31,6 +31,12 @@ class UserSerializer(serializers.ModelSerializer):
             'id': {'read_only': True}
         }
 
+    def create(self, validated_data):
+        user = super().create(validated_data)
+        user.set_password(validated_data['password'])
+        user.save()
+        return user
+
 
 class PassordSerializer(serializers.Serializer):
     new_password = serializers.CharField(max_length=150)
