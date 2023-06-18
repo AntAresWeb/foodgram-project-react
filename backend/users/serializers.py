@@ -38,7 +38,7 @@ class UserSerializer(serializers.ModelSerializer):
         return user
 
 
-class PassordSerializer(serializers.Serializer):
+class PasswordSerializer(serializers.Serializer):
     new_password = serializers.CharField(max_length=150)
     current_password = serializers.CharField(max_length=150)
 
@@ -52,27 +52,3 @@ class LoginSerializer(serializers.Serializer):
 
     class Meta:
         fields = ('password', 'email',)
-
-
-class UserSignupSerializer(serializers.Serializer):
-    email = serializers.EmailField(max_length=254, allow_blank=False)
-    username = serializers.CharField(max_length=150, allow_blank=False)
-
-    def validate_username(self, value):
-        if value.lower() == 'me':
-            raise serializers.ValidationError('Значение не может быть me.')
-        if not name_is_valid(value):
-            raise serializers.ValidationError('Содержит недопустимые символы.')
-        return value
-
-
-class UserTokenSerializer(serializers.Serializer):
-    username = serializers.CharField(max_length=150, allow_blank=False)
-    confirmation_code = serializers.CharField(allow_blank=False)
-
-    def validate_username(self, value):
-        if value.lower() == 'me':
-            raise serializers.ValidationError('Значение не может быть me.')
-        if not name_is_valid(value):
-            raise serializers.ValidationError('Содержит недопустимые символы.')
-        return value

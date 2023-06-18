@@ -3,15 +3,16 @@ from rest_framework import mixins, status, views, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.tokens import (BlacklistedToken,
+                                             OutstandingToken,
+                                             RefreshToken)
 
 from .models import User
 from .serializers import (LoginSerializer,
-                          PassordSerializer,
+                          PasswordSerializer,
                           UserListSerializer,
-                          UserSignupSerializer,
-                          UserSerializer,
-                          UserTokenSerializer)
+                          UserSerializer)
 
 
 class UserViewSet(mixins.CreateModelMixin,
@@ -43,7 +44,7 @@ class UserViewSet(mixins.CreateModelMixin,
     @action(detail=False, methods=['post'])
     def set_password(self, request):
         user = get_object_or_404(User, pk=request.user.id)
-        serializer = PassordSerializer(data=request.data)
+        serializer = PasswordSerializer(data=request.data)
         if serializer.is_valid():
             if user.check_password(
                serializer.validated_data['current_password']):
@@ -65,12 +66,9 @@ class TokenLoginView(views.APIView):
         if serializer.is_valid(raise_exception=True):
             user = get_object_or_404(User,
                                      email=serializer._validated_data['email'])
-            print(user) # can be deleted
             password = serializer.validated_data['password']
-            print(password)
             if user.check_password(password):
-                refresh = RefreshToken.for_user(user)
-                token = str(refresh.access_token)
+                token = str(RefreshToken.for_user(user).access_token)
                 return Response(
                     {'auth_token': token}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -81,12 +79,15 @@ class TokenLogoutView(views.APIView):
     permission_classes = (IsAuthenticated, )
 
     def post(self, request):
-        print(self.request.headers)
-        refresh_token = self.request.data.get('refresh_token')
-        print(refresh_token)
         if request.user.is_authenticated:
-            user = get_object_or_404(User, pk=request.user.id)
-            RefreshToken.for_user(user)
+            for token in OutstandingToken.objects.filter(user=request.user.id):
+                try:
+                    RefreshToken(token).blacklist()
+                except TokenError:
+                    token.delete()
+#                BlacklistedToken.objects.get_or_create(token=token)
             return Response(status=status.HTTP_204_NO_CONTENT)
         else:
-            return Response(status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {'detail': 'Учетные данные не были предоставлены.'},
+                status=status.HTTP_401_UNAUTHORIZED)
