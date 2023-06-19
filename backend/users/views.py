@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.shortcuts import get_object_or_404
 from rest_framework import mixins, status, views, viewsets
 from rest_framework.decorators import action
@@ -7,7 +9,7 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import (BlacklistedToken,
                                              OutstandingToken,
                                              RefreshToken)
-
+from core.permissions import IsTokenValid
 from .models import User
 from .serializers import (LoginSerializer,
                           PasswordSerializer,
@@ -30,7 +32,7 @@ class UserViewSet(mixins.CreateModelMixin,
 
     def get_permissions(self):
         if self.action in ('set_password', 'me', 'retrieve',):
-            permission_classes = (IsAuthenticated,)
+            permission_classes = (IsAuthenticated, IsTokenValid,)
         else:
             permission_classes = (AllowAny,)
         return [permission() for permission in permission_classes]
@@ -68,24 +70,22 @@ class TokenLoginView(views.APIView):
                                      email=serializer._validated_data['email'])
             password = serializer.validated_data['password']
             if user.check_password(password):
-                token = str(RefreshToken.for_user(user).access_token)
+                refresh = RefreshToken.for_user(user)
+                access = str(refresh.access_token)
                 return Response(
-                    {'auth_token': token}, status=status.HTTP_201_CREATED)
+                    {'auth_token': access}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class TokenLogoutView(views.APIView):
     serializer_class = None
-    permission_classes = (IsAuthenticated, )
+    permission_classes = (IsAuthenticated,)
 
     def post(self, request):
         if request.user.is_authenticated:
             for token in OutstandingToken.objects.filter(user=request.user.id):
-                try:
-                    RefreshToken(token).blacklist()
-                except TokenError:
-                    token.delete()
-#                BlacklistedToken.objects.get_or_create(token=token)
+                BlacklistedToken.objects.get_or_create(token=token)
+            RefreshToken().for_user(request.user).blacklist()
             return Response(status=status.HTTP_204_NO_CONTENT)
         else:
             return Response(
