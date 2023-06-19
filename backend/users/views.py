@@ -1,5 +1,5 @@
 from datetime import timedelta
-
+from django.contrib.auth import logout
 from django.shortcuts import get_object_or_404
 from rest_framework import mixins, status, views, viewsets
 from rest_framework.decorators import action
@@ -8,7 +8,8 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import (BlacklistedToken,
                                              OutstandingToken,
-                                             RefreshToken)
+                                             RefreshToken,
+                                             Token)
 from core.permissions import IsTokenValid
 from .models import User
 from .serializers import (LoginSerializer,
@@ -83,9 +84,9 @@ class TokenLogoutView(views.APIView):
 
     def post(self, request):
         if request.user.is_authenticated:
-            for token in OutstandingToken.objects.filter(user=request.user.id):
+            for token in OutstandingToken.objects.filter(user=request.user):
                 BlacklistedToken.objects.get_or_create(token=token)
-            RefreshToken().for_user(request.user).blacklist()
+            logout(request.user)
             return Response(status=status.HTTP_204_NO_CONTENT)
         else:
             return Response(
