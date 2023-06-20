@@ -18,17 +18,17 @@ services:
     env_file: ../.env
     depends_on:
       - db
+    command:
+      cp -r /app/static/. /static/backend/
     volumes:
-      - static:/static
+      - static:/static/frontend
       - media:/app/media
   frontend:
     build: ../frontend
     command:
-      cp -r /app/build/. /static/
-      cp -r ../docs/. /static/api/docs/
-      cp -r ../nginx/. /static//etc/nginx/conf.d/
+      cp -r /app/build/. /static/frontend/
     volumes:
-      - static:/static
+      - static:/static/
   nginx:
     image: nginx:1.22.1
     depends_on:
