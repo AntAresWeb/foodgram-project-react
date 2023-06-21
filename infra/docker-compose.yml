@@ -19,25 +19,25 @@ services:
     depends_on:
       - db
     command:
-      cp -r /app/static/. /static/backend/
+      cp -r /app/static/. /static/backend/.
     volumes:
-      - static:/static/frontend
+      - static:/static/
       - media:/app/media
   frontend:
     build: ../frontend
     command:
-      cp -r /app/build/. /static/frontend/
+      cp -r /app/build/. /static/frontend/.
     volumes:
       - static:/static/
   nginx:
-    image: nginx:1.22.1
+    build: ../infra
     depends_on:
       - backend
       - frontend
+    command: cp /etc/nginx/nginx.conf /static/nginx/nginx.conf
     ports:
       - 8080:80
     volumes:
       - static:/static/
       - media:/media/
-      - static:/etc/nginx/conf.d/
-      - static:/usr/share/nginx/html/
+      - static:/etc/nginx/.
