@@ -20,17 +20,15 @@ services:
     env_file: ../.env
     depends_on:
       - db
-    command:
-      cp -r /app/static/. /static/backend/.
+    command: cp -r /app/static/. /static/backend/.
     volumes:
-      - static:/static/
       - media:/app/media
   frontend:
     build: ../frontend
     command:
       cp -r /app/build/. /static/frontend/.
     volumes:
-      - static:/static/
+      - static:static:/static/
   nginx:
     build: ../infra
     depends_on:
