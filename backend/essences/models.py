@@ -18,22 +18,22 @@ class Ingredient(models.Model):
 
 class Content(models.Model):
     igredient = models.ForeignKey(
-        Ingredient, on_delete=models.CASCADE)
+        Ingredient, related_name='contents', on_delete=models.CASCADE)
     recipe = models.ForeignKey(
-        'Recipe', related_name='content', on_delete=models.CASCADE)
+        'Recipe', related_name='contents', on_delete=models.CASCADE)
     amount = models.IntegerField(validators=[MinValueValidator])
 
 
 class Subscribe(models.Model):
     siteuser = models.ForeignKey(
         User,
-        related_name='subscriber',
+        related_name='subscribes',
         on_delete=models.CASCADE,
         verbose_name='Подписчик',
     )
     author = models.ForeignKey(
         User,
-        related_name='subscribe',
+        related_name='subscribers',
         on_delete=models.CASCADE,
         verbose_name='Подписка на автора'
     )
@@ -42,13 +42,13 @@ class Subscribe(models.Model):
 class Favorite(models.Model):
     siteuser = models.ForeignKey(
         User,
-        related_name='favoriter',
+        related_name='favorites',
         on_delete=models.CASCADE,
         verbose_name='Пользователь',
     )
     recipe = models.ForeignKey(
         'Recipe',
-        related_name='favorite',
+        related_name='favoriters',
         on_delete=models.CASCADE,
         verbose_name='Подборка рецептов'
     )

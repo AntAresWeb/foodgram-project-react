@@ -11,8 +11,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 #from api.filters import TitleFilter
 #from api.permissions import IsAdminOrReadOnly, IsAuthorModeratorAdminOrReadOnly
-from api.serializers import IngredientSerialiser, TagSerialiser
-from essences.models import Ingredient, Tag
+from api.serializers import IngredientSerialiser, RecipeSerializer, TagSerialiser
+from essences.models import Ingredient, Recipe, Tag
 
 
 class IngredientViewSet(mixins.ListModelMixin,
@@ -33,3 +33,9 @@ class TagViewSet(mixins.ListModelMixin,
     serializer_class = TagSerialiser
     permission_classes = (AllowAny,)
     pagination_class = None
+
+
+class RecipeViewSet(viewsets.ModelViewSet):
+    queryset = Recipe.objects.all()
+    serializer_class = RecipeSerializer
+    permission_classes = (AllowAny,)
