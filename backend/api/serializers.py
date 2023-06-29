@@ -4,7 +4,7 @@ from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
-from essences.models import Ingredient, Recipe, Tag
+from essences.models import Content, Ingredient, Recipe, Tag
 from users.serializers import UserListSerializer
 
 
@@ -23,7 +23,10 @@ class TagSerialiser(serializers.ModelSerializer):
 
 
 class ContetnSerializer(serializers.ModelSerializer):
-    id = serializers.
+    id = serializers.IntegerField(source='igredient.id')
+    name = serializers.CharField(source='igredient.name')
+    measurement_unit = serializers.CharField(
+        source='igredient.measurement_unit')
     class Meta:
         model = Content
         fields = ('id', 'name', 'measurement_unit', 'amount',)
