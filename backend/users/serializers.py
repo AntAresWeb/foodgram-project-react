@@ -15,7 +15,7 @@ class UserListSerializer(serializers.ModelSerializer):
     def get_is_subscribed(self, obj):
         user = self.context['request'].user
         if user.is_authenticated is True:
-            return user.subscriber.filter(author=obj).exists()
+            return user.subscribes.filter(author=obj).exists()
         else:
             return False
 

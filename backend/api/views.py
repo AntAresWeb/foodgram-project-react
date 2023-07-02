@@ -3,15 +3,16 @@ import uuid
 from django.core.mail import send_mail
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
-from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, mixins, status, views, viewsets
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import RefreshToken
 
-#from api.filters import TitleFilter
-#from api.permissions import IsAdminOrReadOnly, IsAuthorModeratorAdminOrReadOnly
-from api.serializers import IngredientSerialiser, RecipeSerializer, TagSerialiser
+from api.serializers import (
+    IngredientSerialiser,
+    RecipeSerializer,
+    TagSerialiser
+)
+from api.filters import IngredientFilter
 from essences.models import Ingredient, Recipe, Tag
 
 
@@ -22,8 +23,8 @@ class IngredientViewSet(mixins.ListModelMixin,
     serializer_class = IngredientSerialiser
     permission_classes = (AllowAny,)
     pagination_class = None
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ('^name',)
+    filter_class = IngredientFilter
+    filter_fields = {'name': ['startswith']}
 
 
 class TagViewSet(mixins.ListModelMixin,
@@ -38,4 +39,11 @@ class TagViewSet(mixins.ListModelMixin,
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
-    permission_classes = (AllowAny,)
+    permission_classes = (AllowAny, )
+
+    def get_permissions(self):
+        if self.action in ('create',):
+            permission_classes = (IsAuthenticated,)
+        else:
+            permission_classes = (AllowAny,)
+        return [permission() for permission in permission_classes]

@@ -86,7 +86,6 @@ class TokenLogoutView(views.APIView):
         if request.user.is_authenticated:
             for token in OutstandingToken.objects.filter(user=request.user):
                 BlacklistedToken.objects.get_or_create(token=token)
-            logout(request.user)
             return Response(status=status.HTTP_204_NO_CONTENT)
         else:
             return Response(
