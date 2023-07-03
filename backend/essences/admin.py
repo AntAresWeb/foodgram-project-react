@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from essences.models import Favorite, Ingredient, Subscribe, Tag
+from essences.models import Favorite, Ingredient, Recipe, Subscribe, Tag
 
 """ Как настроить модель в админке
 class TitleAdmin(admin.ModelAdmin):
@@ -22,6 +22,7 @@ class SubscribeAdmin(admin.ModelAdmin):
 
 admin.site.register(Favorite)
 admin.site.register(Ingredient)
+admin.site.register(Recipe)
 admin.site.register(Subscribe, SubscribeAdmin)
 admin.site.register(Tag)
 # admin.site.register(Title, TitleAdmin)

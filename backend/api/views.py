@@ -10,7 +10,8 @@ from rest_framework.response import Response
 from api.serializers import (
     IngredientSerialiser,
     RecipeSerializer,
-    TagSerialiser
+    TagSerialiser,
+    TestSerializer
 )
 from api.filters import IngredientFilter
 from essences.models import Ingredient, Recipe, Tag
@@ -23,8 +24,13 @@ class IngredientViewSet(mixins.ListModelMixin,
     serializer_class = IngredientSerialiser
     permission_classes = (AllowAny,)
     pagination_class = None
-    filter_class = IngredientFilter
-    filter_fields = {'name': ['startswith']}
+
+    def get_queryset(self):
+        queryset = Ingredient.objects.all()
+        search_str = self.request.query_params.get('name')
+        if search_str is not None:
+            queryset = queryset.filter(name__startswith=search_str)
+        return queryset
 
 
 class TagViewSet(mixins.ListModelMixin,
@@ -47,3 +53,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
         else:
             permission_classes = (AllowAny,)
         return [permission() for permission in permission_classes]
+
+
+class TestViewSet(viewsets.ModelViewSet):
+    queryset = Recipe.objects.all()
+    serializer_class = TestSerializer
+    permission_classes = (AllowAny, )

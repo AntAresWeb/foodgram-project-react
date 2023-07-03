@@ -72,7 +72,7 @@ class Recipe(models.Model):
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='recipe',
+        related_name='recipes',
         verbose_name='Автор рецепта',
     )
     name = models.CharField(
@@ -83,9 +83,9 @@ class Recipe(models.Model):
         max_length=200,
         verbose_name='Описание рецепта'
     )
-    tag = models.ManyToManyField(
+    tags = models.ManyToManyField(
         Tag,
-        related_name='recipe',
+        related_name='recipes',
         blank=True,
         verbose_name='Список тегов'
     )
@@ -108,6 +108,3 @@ class Recipe(models.Model):
         ordering = ('pub_date',)
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
-
-    def __str__(self):
-        self.name
