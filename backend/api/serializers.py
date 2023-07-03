@@ -4,7 +4,7 @@ from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
-from essences.models import Content, Ingredient, Recipe, Tag
+from essences.models import Content, Ingredient, Recipe, Tag, User
 from users.serializers import UserListSerializer
 
 
@@ -21,6 +21,23 @@ class TagSerialiser(serializers.ModelSerializer):
         model = Tag
         fields = ('id', 'name', 'color', 'slug',)
         read_only_fields = ('name', 'color', 'slug',)
+
+    def to_internal_value(self, data):
+        try:
+            try:
+                return Tag.objects.get(id=data)
+            except KeyError:
+                raise serializers.ValidationError(
+                    'Тэги не указаны.'
+                )
+            except ValueError:
+                raise serializers.ValidationError(
+                    'Список тэгов должен состоять из целых чисел.'
+                )
+        except Tag.DoesNotExist:
+            raise serializers.ValidationError(
+                'Не найден тэг с указанным id.'
+            )
 
 
 class ContetnSerializer(serializers.ModelSerializer):
@@ -45,14 +62,20 @@ class Base64ImageField(serializers.ImageField):
         return super().to_internal_value(data)
 
 
+class CurrentUserDefault:
+    requires_context = True
+
+    def __call__(self, serializer_field):
+        return serializer_field.context['request'].user
+
+
 class RecipeSerializer(serializers.ModelSerializer):
-#    tags = TagSerialiser(source='id', many=True)
-    tags = serializers.ListField(child=TagSerialiser())
-    author = UserListSerializer(many=False, read_only=True)
+    tags = TagSerialiser(many=True)
+    author = UserListSerializer(many=False, default=CurrentUserDefault)
     ingredients = ContetnSerializer(many=True)
-    is_favorited = serializers.SerializerMethodField(read_only=True)
-    is_in_shopping_cart = serializers.SerializerMethodField(read_only=True)
-    image = Base64ImageField(required=False, allow_null=True)
+    is_favorited = serializers.SerializerMethodField(required=False)
+    is_in_shopping_cart = serializers.SerializerMethodField(required=False)
+    image = Base64ImageField()
 
     class Meta:
         model = Recipe
@@ -67,32 +90,54 @@ class RecipeSerializer(serializers.ModelSerializer):
         return False
 
     def create(self, validated_data):
-        contents = validated_data.pop('ingredients')
+        tags = validated_data.pop('tags')
         recipe = Recipe.objects.create(**validated_data)
-        recipe.author = self.request.user
+        recipe.author = self.context['request'].user
+        for tag in tags:
+            tag = get_object_or_404(Tag, id=tag)
+            recipe.add()
         recipe.save()
-        for content in contents:
-            ingredient = Content.objects.get_or_create(
-                ingredient=content['id'], recipe=recipe)
-            ingredient.amount += content['amount']
-            ingredient.save()
         return recipe
+
+    def update(self, instance, validated_data):
+        tags = validated_data.pop('tags')
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.tags.clear()
+        for tag in tags:
+            instance.tags.add(tag)
+        instance.save()
+        return instance
 
 
 class TestSerializer(serializers.ModelSerializer):
-    tags = serializers.ListField(child=serializers.IntegerField())
-#    tags = serializers.ListField(child=TagSerialiser())
-#    tags = TagSerialiser(many=True, read_only=True)
-    
+    ingredients = ContetnSerializer(many=True)
+    author = UserListSerializer(many=False, default=User.objects.get(id=1))
+
     class Meta:
         model = Recipe
-        fields = ('id', 'tags', )
+        fields = ('id', 'author', 'ingredients', 'name', 'cooking_time',)
 
     def create(self, validated_data):
         tags = validated_data.pop('tags')
-        recipe = Recipe.objects.first()
+        recipe = Recipe.objects.create(**validated_data)
+        recipe.author = self.context['request'].user
         for tag in tags:
-            print(tag)
-            #tag = get_object_or_404(Tag, id=tag)
-            #recipe.add()
+            tag = get_object_or_404(Tag, id=tag)
+            recipe.add()
         return recipe
+
+    def update(self, instance, validated_data):
+        ingredients = validated_data.pop('ingredients')
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.contents.all().delete()
+        for ingredient in ingredients:
+            content, result = Content.objects.get_or_create(
+                ingredient=ingredient,
+                recipe=instance)
+            if result:
+                content.amount += ingredient['amount']
+                content.save()
+        instance.save()
+        return instance

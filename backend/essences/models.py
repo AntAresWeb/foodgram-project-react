@@ -17,7 +17,7 @@ class Ingredient(models.Model):
 
 
 class Content(models.Model):
-    igredient = models.ForeignKey(
+    ingredient = models.ForeignKey(
         Ingredient, related_name='contents', on_delete=models.CASCADE)
     recipe = models.ForeignKey(
         'Recipe', related_name='contents', on_delete=models.CASCADE)
