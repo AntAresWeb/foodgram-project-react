@@ -22,6 +22,23 @@ class TagSerialiser(serializers.ModelSerializer):
         fields = ('id', 'name', 'color', 'slug',)
         read_only_fields = ('name', 'color', 'slug',)
 
+    def to_internal_value(self, data):
+        try:
+            try:
+                return Tag.objects.get(id=data)
+            except KeyError:
+                raise serializers.ValidationError(
+                    'Тэги не указаны.'
+                )
+            except ValueError:
+                raise serializers.ValidationError(
+                    'Список тэгов должен состоять из целых чисел.'
+                )
+        except Tag.DoesNotExist:
+            raise serializers.ValidationError(
+                'Не найден тэг с указанным id.'
+            )
+
 
 class ContetnSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(source='ingredient.id')
@@ -56,7 +73,7 @@ class RecipeSerializer(serializers.ModelSerializer):
     ingredients = ContetnSerializer(many=True)
     is_favorited = serializers.SerializerMethodField(required=False)
     is_in_shopping_cart = serializers.SerializerMethodField(required=False)
-    image = Base64ImageField()
+    image = Base64ImageField(source='picture')
 
     class Meta:
         model = Recipe
@@ -76,7 +93,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         recipe.author = self.context['request'].user
         for tag in tags:
             tag = get_object_or_404(Tag, id=tag)
-            recipe.add()
+            recipe.tags.add(tag)
         recipe.save()
         return recipe
 
@@ -92,21 +109,34 @@ class RecipeSerializer(serializers.ModelSerializer):
 
 
 class TestSerializer(serializers.ModelSerializer):
-    tags = serializers.ListField(child=serializers.IntegerField())
-#    tags = serializers.ListField(child=TagSerialiser())
-#    tags = TagSerialiser(many=True, read_only=True)
-    
+    ingredients = ContetnSerializer(many=True)
+    author = UserListSerializer(many=False, default=User.objects.get(id=1))
+    image = Base64ImageField(source='picture')
+
     class Meta:
         model = Recipe
-        fields = ('id', 'tags', )
+        fields = ('author', 'ingredients', 'name', 'text', 'cooking_time', 'image')
 
     def create(self, validated_data):
-        tags = validated_data.pop('tags')
-        recipe = Recipe.objects.first()
-        for tag in tags:
-            print(tag)
-            #tag = get_object_or_404(Tag, id=tag)
-            #recipe.add()
+        ingredients_list = validated_data.pop('ingredients')
+        recipe = Recipe.objects.create(**validated_data)
+        for position in ingredients_list:
+            ingredient = get_object_or_404(
+                Ingredient, id=position.get('ingredient')['id']
+            )
+            amount = position.get('amount')
+            if amount > 0:
+                try:
+                    content = Content.objects.get(
+                        ingredient=ingredient, recipe=recipe)
+                    content.amount += position.get('amount')
+                    content.save()
+                except Content.DoesNotExist:
+                    Content.objects.create(
+                        ingredient=ingredient,
+                        recipe=recipe,
+                        amount=position.get('amount')
+                    )
         return recipe
 
     def update(self, instance, validated_data):

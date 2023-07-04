@@ -19,9 +19,7 @@ class Ingredient(models.Model):
 class Content(models.Model):
     ingredient = models.ForeignKey(
         Ingredient, related_name='contents', on_delete=models.CASCADE)
-    recipe = models.ForeignKey(
-        'Recipe', related_name='contents', on_delete=models.CASCADE)
-    amount = models.IntegerField(validators=[MinValueValidator])
+    amount = models.IntegerField(default=1, validators=[MinValueValidator(1)])
 
 
 class Subscribe(models.Model):
@@ -86,10 +84,14 @@ class Recipe(models.Model):
     tags = models.ManyToManyField(
         Tag,
         related_name='recipes',
-        blank=True,
         verbose_name='Список тегов'
     )
-    picture = models.ImageField(
+    Ingredients = models.ManyToManyField(
+        Content,
+        related_name='recipes',
+        verbose_name='Список ингредиентов'
+    )
+    image = models.ImageField(
         upload_to='recipes/images/',
         null=True,
         default=None
