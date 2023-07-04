@@ -22,18 +22,6 @@ class TagSerialiser(serializers.ModelSerializer):
         fields = ('id', 'name', 'color', 'slug',)
         read_only_fields = ('name', 'color', 'slug',)
 
-    def to_internal_value(self, data):
-        try:
-            try:
-                return Tag.objects.get(id=data)
-            except KeyError:
-                raise serializers.ValidationError('Тэги не указаны.')
-            except ValueError:
-                raise serializers.ValidationError(
-                    'Список тэгов должен состоять из целых чисел.')
-        except Tag.DoesNotExist:
-            raise serializers.ValidationError('Не найден тэг с указанным id.')
-
 
 class ContetnSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(source='ingredient.id')
@@ -104,33 +92,21 @@ class RecipeSerializer(serializers.ModelSerializer):
 
 
 class TestSerializer(serializers.ModelSerializer):
-    ingredients = ContetnSerializer(many=True)
-    author = UserListSerializer(many=False, default=User.objects.get(id=1))
-    image = Base64ImageField(source='picture')
-
+    tags = serializers.ListField(child=serializers.IntegerField())
+#    tags = serializers.ListField(child=TagSerialiser())
+#    tags = TagSerialiser(many=True, read_only=True)
+    
     class Meta:
         model = Recipe
-        fields = ('author', 'ingredients', 'name', 'text', 'image',
-                  'cooking_time',)
+        fields = ('id', 'tags', )
 
     def create(self, validated_data):
-        ingredient_list = validated_data.pop('ingredients')
-#        recipe = Recipe.objects.create(**validated_data)
-        print('-->>', repr(ingredient_list))
-#        id_list = [i['id'] for i in ingredient_list]
-#        print('-->>', id_list)
-        for ingredient_position in ingredient_list:
-            print('-->>', ingredient_position)
-            print('-->>', ingredient_position.get('id'))
-            '''
-            ingredient = get_object_or_404(
-                Ingredient, id=ingredient_position['id'])
-            content = get_object_or_404(
-                Content, ingredient=ingredient, recipe=recipe)
-            content.amount += ingredient['amount']
-            content.save()
-            '''
-#        recipe.save()
+        tags = validated_data.pop('tags')
+        recipe = Recipe.objects.first()
+        for tag in tags:
+            print(tag)
+            #tag = get_object_or_404(Tag, id=tag)
+            #recipe.add()
         return recipe
 
     def update(self, instance, validated_data):
