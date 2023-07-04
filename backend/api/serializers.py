@@ -4,7 +4,7 @@ from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
-from essences.models import Content, Ingredient, Recipe, Tag
+from essences.models import Content, Ingredient, Recipe, Tag, User
 from users.serializers import UserListSerializer
 
 
@@ -22,12 +22,24 @@ class TagSerialiser(serializers.ModelSerializer):
         fields = ('id', 'name', 'color', 'slug',)
         read_only_fields = ('name', 'color', 'slug',)
 
+    def to_internal_value(self, data):
+        try:
+            try:
+                return Tag.objects.get(id=data)
+            except KeyError:
+                raise serializers.ValidationError('Тэги не указаны.')
+            except ValueError:
+                raise serializers.ValidationError(
+                    'Список тэгов должен состоять из целых чисел.')
+        except Tag.DoesNotExist:
+            raise serializers.ValidationError('Не найден тэг с указанным id.')
+
 
 class ContetnSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField(source='igredient.id')
-    name = serializers.CharField(source='igredient.name', read_only=True)
+    id = serializers.IntegerField(source='ingredient.id')
+    name = serializers.CharField(source='ingredient.name', read_only=True)
     measurement_unit = serializers.CharField(
-        source='igredient.measurement_unit', read_only=True)
+        source='ingredient.measurement_unit', read_only=True)
 
     class Meta:
         model = Content
@@ -39,20 +51,24 @@ class Base64ImageField(serializers.ImageField):
         if isinstance(data, str) and data.startswith('data:image'):
             format, imgstr = data.split(';base64,')
             ext = format.split('/')[-1]
-
             data = ContentFile(base64.b64decode(imgstr), name='temp.' + ext)
-
         return super().to_internal_value(data)
 
 
+class CurrentUserDefault:
+    requires_context = True
+
+    def __call__(self, serializer_field):
+        return serializer_field.context['request'].user
+
+
 class RecipeSerializer(serializers.ModelSerializer):
-#    tags = TagSerialiser(source='id', many=True)
-    tags = serializers.ListField(child=TagSerialiser())
-    author = UserListSerializer(many=False, read_only=True)
+    tags = TagSerialiser(many=True)
+    author = UserListSerializer(many=False, default=CurrentUserDefault)
     ingredients = ContetnSerializer(many=True)
-    is_favorited = serializers.SerializerMethodField(read_only=True)
-    is_in_shopping_cart = serializers.SerializerMethodField(read_only=True)
-    image = Base64ImageField(required=False, allow_null=True)
+    is_favorited = serializers.SerializerMethodField(required=False)
+    is_in_shopping_cart = serializers.SerializerMethodField(required=False)
+    image = Base64ImageField()
 
     class Meta:
         model = Recipe
@@ -67,32 +83,67 @@ class RecipeSerializer(serializers.ModelSerializer):
         return False
 
     def create(self, validated_data):
-        contents = validated_data.pop('ingredients')
+        tags = validated_data.pop('tags')
         recipe = Recipe.objects.create(**validated_data)
-        recipe.author = self.request.user
+        recipe.author = self.context['request'].user
+        for tag in tags:
+            tag = get_object_or_404(Tag, id=tag)
+            recipe.add()
         recipe.save()
-        for content in contents:
-            ingredient = Content.objects.get_or_create(
-                ingredient=content['id'], recipe=recipe)
-            ingredient.amount += content['amount']
-            ingredient.save()
         return recipe
+
+    def update(self, instance, validated_data):
+        tags = validated_data.pop('tags')
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.tags.clear()
+        for tag in tags:
+            instance.tags.add(tag)
+        instance.save()
+        return instance
 
 
 class TestSerializer(serializers.ModelSerializer):
-    tags = serializers.ListField(child=serializers.IntegerField())
-#    tags = serializers.ListField(child=TagSerialiser())
-#    tags = TagSerialiser(many=True, read_only=True)
-    
+    ingredients = ContetnSerializer(many=True)
+    author = UserListSerializer(many=False, default=User.objects.get(id=1))
+    image = Base64ImageField(source='picture')
+
     class Meta:
         model = Recipe
-        fields = ('id', 'tags', )
+        fields = ('author', 'ingredients', 'name', 'text', 'image',
+                  'cooking_time',)
 
     def create(self, validated_data):
-        tags = validated_data.pop('tags')
-        recipe = Recipe.objects.first()
-        for tag in tags:
-            print(tag)
-            #tag = get_object_or_404(Tag, id=tag)
-            #recipe.add()
+        ingredient_list = validated_data.pop('ingredients')
+#        recipe = Recipe.objects.create(**validated_data)
+        print('-->>', repr(ingredient_list))
+#        id_list = [i['id'] for i in ingredient_list]
+#        print('-->>', id_list)
+        for ingredient_position in ingredient_list:
+            print('-->>', ingredient_position)
+            print('-->>', ingredient_position.get('id'))
+            '''
+            ingredient = get_object_or_404(
+                Ingredient, id=ingredient_position['id'])
+            content = get_object_or_404(
+                Content, ingredient=ingredient, recipe=recipe)
+            content.amount += ingredient['amount']
+            content.save()
+            '''
+#        recipe.save()
         return recipe
+
+    def update(self, instance, validated_data):
+        ingredients = validated_data.pop('ingredients')
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.contents.all().delete()
+        for ingredient in ingredients:
+            content, result = Content.objects.get_or_create(
+                ingredient=ingredient,
+                recipe=instance)
+            if result:
+                content.amount += ingredient['amount']
+                content.save()
+        instance.save()
+        return instance
