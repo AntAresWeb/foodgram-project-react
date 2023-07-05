@@ -43,9 +43,9 @@ class TagSerialiser(serializers.ModelSerializer):
 class ContetnSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(source='ingredient.id')
     name = serializers.CharField(
-        source='ingredient.name', read_only=True, required=False)
+        source='ingredient.name', read_only=True)
     measurement_unit = serializers.CharField(
-        source='ingredient.measurement_unit', read_only=True, required=False)
+        source='ingredient.measurement_unit', read_only=True)
 
     class Meta:
         model = Content
@@ -110,40 +110,27 @@ class RecipeSerializer(serializers.ModelSerializer):
 
 
 class TestSerializer(serializers.ModelSerializer):
-#    ingredients = ContetnSerializer(many=True)
+    ingredients = ContetnSerializer(many=True, source='contents', read_only=False)
+    tags = TagSerialiser(many=True)
     author = UserListSerializer(many=False, default=User.objects.get(id=1))
     image = Base64ImageField()
 
     class Meta:
         model = Recipe
-        fields = ('author', 'ingredients', 'name', 'text', 'cooking_time', 'image')
+        fields = ('author', 'tags', 'ingredients', 'name', 'text',
+                  'cooking_time', 'image')
 
     def create(self, validated_data):
-        ingredients_list = validated_data.pop('ingredients')
+        ingredients = validated_data.pop('ingredients')
+        tags = validated_data.pop('tags')
+        print('-->>', ingredients)
+        print('-->>', tags)
+
         recipe = Recipe.objects.create(**validated_data)
-        for position in ingredients_list:
-            print('-->>', position)
-#            ingredient = Ingredient.objects.get(id=position.get)
-            content = Content.objects.create(**position)
-            recipe.ingredients.add(content)
-            '''
-            ingredient = get_object_or_404(
-                Ingredient, id=position.get('ingredient')['id']
-            )
-            amount = position.get('amount')
-            if amount > 0:
-                try:
-                    content = Content.objects.get(
-                        ingredient=ingredient, recipe=recipe)
-                    content.amount += position.get('amount')
-                    content.save()
-                except Content.DoesNotExist:
-                    Content.objects.create(
-                        ingredient=ingredient,
-                        recipe=recipe,
-                        amount=position.get('amount')
-                    )
-            '''
+        for tag in tags:
+            recipe.tags.add(tag)
+        for ingredient in ingredients:
+            recipe.ingredients.add(ingredient)
         return recipe
 
     def update(self, instance, validated_data):
