@@ -42,9 +42,10 @@ class TagSerialiser(serializers.ModelSerializer):
 
 class ContetnSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(source='ingredient.id')
-    name = serializers.CharField(source='ingredient.name', read_only=True)
+    name = serializers.CharField(
+        source='ingredient.name', read_only=True, required=False)
     measurement_unit = serializers.CharField(
-        source='ingredient.measurement_unit', read_only=True)
+        source='ingredient.measurement_unit', read_only=True, required=False)
 
     class Meta:
         model = Content
@@ -73,7 +74,7 @@ class RecipeSerializer(serializers.ModelSerializer):
     ingredients = ContetnSerializer(many=True)
     is_favorited = serializers.SerializerMethodField(required=False)
     is_in_shopping_cart = serializers.SerializerMethodField(required=False)
-    image = Base64ImageField(source='picture')
+    image = Base64ImageField()
 
     class Meta:
         model = Recipe
@@ -109,9 +110,9 @@ class RecipeSerializer(serializers.ModelSerializer):
 
 
 class TestSerializer(serializers.ModelSerializer):
-    ingredients = ContetnSerializer(many=True)
+#    ingredients = ContetnSerializer(many=True)
     author = UserListSerializer(many=False, default=User.objects.get(id=1))
-    image = Base64ImageField(source='picture')
+    image = Base64ImageField()
 
     class Meta:
         model = Recipe
@@ -121,6 +122,11 @@ class TestSerializer(serializers.ModelSerializer):
         ingredients_list = validated_data.pop('ingredients')
         recipe = Recipe.objects.create(**validated_data)
         for position in ingredients_list:
+            print('-->>', position)
+#            ingredient = Ingredient.objects.get(id=position.get)
+            content = Content.objects.create(**position)
+            recipe.ingredients.add(content)
+            '''
             ingredient = get_object_or_404(
                 Ingredient, id=position.get('ingredient')['id']
             )
@@ -137,6 +143,7 @@ class TestSerializer(serializers.ModelSerializer):
                         recipe=recipe,
                         amount=position.get('amount')
                     )
+            '''
         return recipe
 
     def update(self, instance, validated_data):
