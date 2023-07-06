@@ -22,7 +22,7 @@ class TagSerialiser(serializers.ModelSerializer):
         fields = ('id', 'name', 'color', 'slug',)
         read_only_fields = ('name', 'color', 'slug',)
 
-    def to2_internal_value(self, data):
+    def to_internal_value(self, data):
         try:
             try:
                 return Tag.objects.get(id=data)
@@ -117,21 +117,18 @@ class TestSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         ingredients = validated_data.pop('ingredients')
-        tags = self.initial_data['tags']
-        tags_data = validated_data.pop('tags')
-        print('-->>', tags_data)
-        print('-->>', tags)
+        print('-->>', ingredients)
 
-#        recipe = Recipe.objects.create(**validated_data)
-#        recipe.tags.add(*tags)
-#        for tag in tags:
-#            recipe.tags.add(tag)
+        tags = validated_data.pop('tags')
+        recipe = Recipe.objects.create(**validated_data)
+        recipe.tags.add(*tags)
 
         for ingredient in ingredients:
-            print('-->>', ingredient)
-#            print('-->>', ingredient.get('id'))
-#            print('-->>', ingredient)
-            recipe.ingredients.add(**ingredient)
+            amount = {'amount': ingredient.pop('amount')}
+            id = ingredient.pop('ingredient').get('id')
+            print('amount -->>', amount)
+            print('id -->>', id)
+            recipe.ingredients.add(Ingredient.objects.get(id=id), through_defaults=amount)
         return recipe
 
     def update(self, instance, validated_data):
