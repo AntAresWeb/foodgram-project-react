@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
-from django.core.validators import MinValueValidator
+from django.core.validators import MaxLengthValidator, MinValueValidator
 
 User = get_user_model()
 
@@ -17,11 +17,10 @@ class Ingredient(models.Model):
 
 
 class Content(models.Model):
-    ingredient = models.ForeignKey(
-        Ingredient, related_name='contents', on_delete=models.CASCADE)
-    recipe = models.ForeignKey(
-        'Recipe', related_name='contents', on_delete=models.CASCADE)
-    amount = models.IntegerField(default=1, validators=[MinValueValidator(1)])
+    ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
+    recipe = models.ForeignKey('Recipe', on_delete=models.CASCADE)
+    amount = models.IntegerField(
+        default=1, validators=[MinValueValidator(1)])
 
 
 class Subscribe(models.Model):
@@ -58,12 +57,13 @@ class Shoppingcart(models.Model):
     siteuser = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
+        related_name='shoppingcarts',
         verbose_name='Пользователь',
     )
     recipe = models.ManyToManyField(
         'Recipe',
         blank=True,
-        related_name='shopingcart',
+        related_name='shoppingcarts',
         verbose_name='Список рецептов для закупки ингредиентов'
     )
 
@@ -87,6 +87,10 @@ class Recipe(models.Model):
         Tag,
         related_name='recipes',
         verbose_name='Список тегов'
+    )
+    ingredients = models.ManyToManyField(
+        Ingredient,
+        through=Content
     )
     image = models.ImageField(
         upload_to='recipes/images/',
