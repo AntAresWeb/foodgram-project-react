@@ -17,6 +17,11 @@ class TitleAdmin(admin.ModelAdmin):
 """
 
 
+class RecipeAdmin(admin.ModelAdmin):
+    list_display = ('name', 'author', 'name', 'text',
+                    'cooking_time', 'image')
+
+
 class SubscribeAdmin(admin.ModelAdmin):
     list_display = ('siteuser', 'author')
 
@@ -24,7 +29,7 @@ class SubscribeAdmin(admin.ModelAdmin):
 admin.site.register(Content)
 admin.site.register(Favorite)
 admin.site.register(Ingredient)
-admin.site.register(Recipe)
+admin.site.register(Recipe, RecipeAdmin)
 admin.site.register(Shoppingcart)
 admin.site.register(Subscribe, SubscribeAdmin)
 admin.site.register(Tag)

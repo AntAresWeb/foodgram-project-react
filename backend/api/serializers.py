@@ -39,7 +39,7 @@ class TagSerialiser(serializers.ModelSerializer):
 class ContetnSerializer(serializers.ModelSerializer):
     id = serializers.CharField(source='ingredient.id')
     name = serializers.CharField(source='ingredient.name', read_only=True)
-    measurement_unit = serializers.IntegerField(
+    measurement_unit = serializers.CharField(
         source='ingredient.measurement_unit', read_only=True)
 
     class Meta:
@@ -63,19 +63,19 @@ class CurrentUserDefault:
         return serializer_field.context['request'].user
 
 
-class RecipeSerializer(serializers.ModelSerializer):
+class RecipeReadSerializer(serializers.ModelSerializer):
     tags = TagSerialiser(many=True)
     author = UserListSerializer(many=False, default=CurrentUserDefault)
-    ingredients = ContetnSerializer(many=True)
+    ingredients = serializers.SerializerMethodField()
     is_favorited = serializers.SerializerMethodField(required=False)
     is_in_shopping_cart = serializers.SerializerMethodField(required=False)
     image = Base64ImageField()
 
     class Meta:
         model = Recipe
-        field = ('id', 'tags', 'author', 'ingredients',
-                 'is_favorited', 'is_in_shopping_cart', 'name',
-                 'image', 'text', 'cooking_time',)
+        fields = ('id', 'tags', 'author', 'ingredients',
+                  'is_favorited', 'is_in_shopping_cart', 'name',
+                  'image', 'text', 'cooking_time',)
 
     def get_is_favorited(self, obj):
         return False
@@ -83,28 +83,12 @@ class RecipeSerializer(serializers.ModelSerializer):
     def get_is_in_shopping_cart(self, obj):
         return False
 
-    def create(self, validated_data):
-        tags = validated_data.pop('tags')
-        recipe = Recipe.objects.create(**validated_data)
-        recipe.author = self.context['request'].user
-        for tag in tags:
-            tag = get_object_or_404(Tag, id=tag)
-            recipe.tags.add(tag)
-        recipe.save()
-        return recipe
-
-    def update(self, instance, validated_data):
-        tags = validated_data.pop('tags')
-        for key, value in validated_data.items():
-            setattr(instance, key, value)
-        instance.tags.clear()
-        for tag in tags:
-            instance.tags.add(tag)
-        instance.save()
-        return instance
+    def get_ingredients(self, obj):
+        queryset = Content.objects.filter(recipe=obj)
+        return ContetnSerializer(queryset, many=True).data
 
 
-class TestSerializer(serializers.ModelSerializer):
+class RecipeWriteSerializer(serializers.ModelSerializer):
     ingredients = ContetnSerializer(many=True)
     tags = TagSerialiser(many=True)
     author = UserListSerializer(many=False, default=User.objects.get(id=1))
@@ -117,18 +101,15 @@ class TestSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         ingredients = validated_data.pop('ingredients')
-        print('-->>', ingredients)
-
         tags = validated_data.pop('tags')
         recipe = Recipe.objects.create(**validated_data)
         recipe.tags.add(*tags)
 
         for ingredient in ingredients:
             amount = {'amount': ingredient.pop('amount')}
-            id = ingredient.pop('ingredient').get('id')
-            print('amount -->>', amount)
-            print('id -->>', id)
-            recipe.ingredients.add(Ingredient.objects.get(id=id), through_defaults=amount)
+            id = int(ingredient.pop('ingredient').get('id'))
+            recipe.ingredients.add(Ingredient.objects.get(id=id),
+                                   through_defaults=amount)
         return recipe
 
     def update(self, instance, validated_data):

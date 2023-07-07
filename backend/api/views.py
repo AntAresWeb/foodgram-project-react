@@ -9,9 +9,9 @@ from rest_framework.response import Response
 
 from api.serializers import (
     IngredientSerialiser,
-    RecipeSerializer,
+    RecipeReadSerializer,
+    RecipeWriteSerializer,
     TagSerialiser,
-    TestSerializer
 )
 from api.filters import IngredientFilter
 from essences.models import Ingredient, Recipe, Tag
@@ -44,18 +44,18 @@ class TagViewSet(mixins.ListModelMixin,
 
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
-    serializer_class = RecipeSerializer
+#    serializer_class = RecipeSerializer
     permission_classes = (AllowAny, )
 
     def get_permissions(self):
-        if self.action in ('create',):
-            permission_classes = (IsAuthenticated,)
+        if self.action in ("create", "update", "partial_update", "destroy",):
+            permission_classes = (AllowAny,)
+#            permission_classes = (IsAuthenticated,)
         else:
             permission_classes = (AllowAny,)
         return [permission() for permission in permission_classes]
 
-
-class TestViewSet(viewsets.ModelViewSet):
-    queryset = Recipe.objects.all()
-    serializer_class = TestSerializer
-    permission_classes = (AllowAny, )
+    def get_serializer_class(self):
+        if self.action in ("create", "update", "partial_update", "destroy",):
+            return RecipeWriteSerializer
+        return RecipeReadSerializer

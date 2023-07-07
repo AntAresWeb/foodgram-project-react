@@ -17,8 +17,16 @@ class Ingredient(models.Model):
 
 
 class Content(models.Model):
-    ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
-    recipe = models.ForeignKey('Recipe', on_delete=models.CASCADE)
+    ingredient = models.ForeignKey(
+        Ingredient,
+        on_delete=models.CASCADE,
+        related_name='contents'
+    )
+    recipe = models.ForeignKey(
+        'Recipe',
+        on_delete=models.CASCADE,
+        related_name='contents'
+    )
     amount = models.IntegerField(
         default=1, validators=[MinValueValidator(1)])
 
@@ -90,7 +98,8 @@ class Recipe(models.Model):
     )
     ingredients = models.ManyToManyField(
         Ingredient,
-        through=Content
+        through=Content,
+        related_name='recipes'
     )
     image = models.ImageField(
         upload_to='recipes/images/',
