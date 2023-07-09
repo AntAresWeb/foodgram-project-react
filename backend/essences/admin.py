@@ -17,18 +17,26 @@ class TitleAdmin(admin.ModelAdmin):
 """
 
 
+class ContentAdmin(admin.ModelAdmin):
+    list_display = ('id', 'recipe', 'ingredient', 'amount',)
+
+
+class IngredientAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'measurement_unit',)
+
+
 class RecipeAdmin(admin.ModelAdmin):
-    list_display = ('name', 'author', 'name', 'text',
+    list_display = ('id', 'name', 'author', 'name', 'text',
                     'cooking_time', 'image')
 
 
 class SubscribeAdmin(admin.ModelAdmin):
-    list_display = ('siteuser', 'author')
+    list_display = ('id', 'siteuser', 'author')
 
 
-admin.site.register(Content)
+admin.site.register(Content, ContentAdmin)
 admin.site.register(Favorite)
-admin.site.register(Ingredient)
+admin.site.register(Ingredient, IngredientAdmin)
 admin.site.register(Recipe, RecipeAdmin)
 admin.site.register(Shoppingcart)
 admin.site.register(Subscribe, SubscribeAdmin)
