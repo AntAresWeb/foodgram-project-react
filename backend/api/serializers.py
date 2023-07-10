@@ -76,8 +76,8 @@ class CurrentUserDefault:
     requires_context = False
 
     def __call__(self, serializer_field):
-        return User.objects.get(id=1)
-#        return serializer_field.context['request'].user
+        print(serializer_field.context['request'].user)
+        return serializer_field.context['request'].user
 
 
 class RecipeReadSerializer(serializers.ModelSerializer):
@@ -105,7 +105,8 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
     ingredients = ContetnSerializer(many=True, source='contents')
     tags = serializers.PrimaryKeyRelatedField(
         queryset=Tag.objects.all(), many=True)
-    author = UserListSerializer(many=False, default=CurrentUserDefault)
+    author = UserListSerializer(many=False,
+                                default=serializers.CurrentUserDefault())
     image = Base64ImageField()
 
     class Meta:
@@ -120,6 +121,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         )
 
     def create(self, validated_data):
+        print('user -->>', validated_data['author'])
         contents = validated_data.pop('contents')
         tags = validated_data.pop('tags')
         recipe = Recipe.objects.create(**validated_data)
