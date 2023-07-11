@@ -1,7 +1,8 @@
 import uuid
 
-from django.core.mail import send_mail
 from django.db.models import Avg
+from django.core.mail import send_mail
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from rest_framework import filters, mixins, status, views, viewsets
 from rest_framework.decorators import action
@@ -12,7 +13,7 @@ from api.filters import IngredientFilter
 from essences.models import (
     Content, Favorite, Ingredient, Recipe, Shoppingcart, Subscribe, Tag, User
 )
-from api.permissions import is
+from api.permissions import IsAuthor
 from api.serializers import (
     IngredientSerialiser,
     RecipeReadSerializer,
@@ -65,20 +66,24 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return RecipeWriteSerializer
         return RecipeReadSerializer
 
-    @action(methods=['get'], detail=False)
+    @action(methods=['GET'], detail=False, url_path='download_shopping_cart')
     def download_shopping_cart(self, request):
-        return Response({'message': 'download_shopping_cart'},
-                        status=status.HTTP_200_OK)
+        with open('file.csv', 'r') as file:
+            response = HttpResponse(file, content_type='application/msword')
+            response['Content-Disposition'] = 'attachment; filename=%s' %file.name
+        return response
 
-    @action(methods=['post', 'delete'], detail=True,
+    @action(methods=['POST', 'DELETE'], detail=True,
             permission_classes=(IsAuthenticated,))
     def shopping_cart(self, request, pk=None):
         recipe = get_object_or_404(Recipe, id=pk)
         print('recipe -->>', recipe)
         print('user -->>', request.user)
-        if self.action in ('destroy'):
+        print('self.action -->>', repr(self.action))
+        if self.action in ('destroy',):
             recipe.delete()
-        if self.action in ('post'):
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        if self.action in ('post',):
             shopping_cart = Shoppingcart.objects.create(
                 siteuser=request.user, recipe=recipe)
             shopping_cart.save()
