@@ -45,6 +45,10 @@ class Subscribe(models.Model):
         verbose_name='Подписка на автора'
     )
 
+    @property
+    def is_author(self, user):
+        return self.siteuser == user
+
 
 class Favorite(models.Model):
     siteuser = models.ForeignKey(
@@ -59,6 +63,10 @@ class Favorite(models.Model):
         on_delete=models.CASCADE,
         verbose_name='Подборка рецептов'
     )
+
+    @property
+    def is_author(self, user):
+        return self.siteuser == user
 
 
 class Shoppingcart(models.Model):
@@ -75,6 +83,10 @@ class Shoppingcart(models.Model):
         related_name='shoppingcarts',
         verbose_name='Список рецептов для закупки ингредиентов'
     )
+
+    @property
+    def is_author(self, user):
+        return self.siteuser == user
 
 
 class Recipe(models.Model):
@@ -121,3 +133,7 @@ class Recipe(models.Model):
         ordering = ('pub_date',)
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
+
+    @property
+    def is_author(self, user):
+        return self.author == user
