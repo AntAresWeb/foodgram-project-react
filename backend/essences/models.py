@@ -46,7 +46,7 @@ class Subscribe(models.Model):
     )
 
     @property
-    def is_author(self, user):
+    def is_owner(self, user):
         return self.siteuser == user
 
 
@@ -65,7 +65,7 @@ class Favorite(models.Model):
     )
 
     @property
-    def is_author(self, user):
+    def is_owner(self, user):
         return self.siteuser == user
 
 
@@ -85,7 +85,7 @@ class Shoppingcart(models.Model):
     )
 
     @property
-    def is_author(self, user):
+    def is_owner(self, user):
         return self.siteuser == user
 
 

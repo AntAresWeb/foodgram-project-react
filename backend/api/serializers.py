@@ -1,11 +1,12 @@
 import base64
 
+from django.db.models import Avg, Max, Min, Sum, Count
 from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 
-from essences.models import Content, Ingredient, Recipe, Tag, User
+from essences.models import Content, Ingredient, Recipe, Subscribe, Tag, User
 
 
 class UserListSerializer(serializers.ModelSerializer):
@@ -105,14 +106,6 @@ class Base64ImageField(serializers.ImageField):
         return super().to_internal_value(data)
 
 
-class CurrentUserDefault:
-    requires_context = False
-
-    def __call__(self, serializer_field):
-        print(serializer_field.context['request'].user)
-        return serializer_field.context['request'].user
-
-
 class RecipeReadSerializer(serializers.ModelSerializer):
     tags = TagSerialiser(many=True)
     author = UserListSerializer(many=False)
@@ -199,6 +192,42 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
                 f'В базе нет ингредиентов с id = {not_ids}'
             )
         return value
+
+
+class RecipeLaconicSerializer(serializers.ModelSerializer):
+    class Meta:
+        models = Recipe
+        fields = ('id', 'name', 'image', 'cooking_time',)
+        read_only_fields = ('id', 'name', 'image', 'cooking_time',)
+
+
+class SubscribeSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(source='author.email')
+    id = serializers.IntegerField(source='author.id')
+    username = serializers.CharField(source='author.username')
+    first_name = serializers.CharField(source='author.first_name')
+    last_name = serializers.CharField(source='author.last_name')
+    is_subscribed = serializers.SerializerMethodField()
+    recipes = RecipeLaconicSerializer(source='recipes')
+    recipes_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Subscribe
+        fields = ('email', 'id', 'username', 'first_name',
+                  'last_name', 'is_subscribed', 'recipes', 'recipes_count',)
+        read_only_fields = ('email', 'id', 'username', 'first_name',
+                            'last_name', 'is_subscribed', 'recipes',
+                            'recipes_count',)
+
+    def get_is_subscribed(self, obj):
+        user = self.context['request'].user
+        if user.is_authenticated is True:
+            return user.subscribes.filter(author=obj).exists()
+        else:
+            return False
+
+    def recipes_count(self, obj):
+        return obj.recipes.aggregate(Count('id')).get('id__count')
 
 
 class PasswordSerializer(serializers.Serializer):

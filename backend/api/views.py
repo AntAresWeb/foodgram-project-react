@@ -23,6 +23,7 @@ from api.serializers import (
     IngredientSerialiser,
     RecipeReadSerializer,
     RecipeWriteSerializer,
+    SubscribeSerializer,
     TagSerialiser,
 )
 from core.permissions import IsTokenValid
@@ -115,7 +116,7 @@ class UserViewSet(mixins.CreateModelMixin,
             return UserSerializer
 
     def get_permissions(self):
-        if self.action in ('set_password', 'me', 'retrieve',):
+        if self.action in ('set_password', 'me', 'retrieve', 'subscribe'):
             permission_classes = (IsAuthenticated, IsTokenValid,)
         else:
             permission_classes = (AllowAny,)
@@ -145,25 +146,41 @@ class UserViewSet(mixins.CreateModelMixin,
     @action(detail=True, methods=['post', 'delete'],
             permission_classes=(IsAuthenticated,))
     def subscribe(self, request, pk=None):
+        
+        user = request.user
+
         if request.method == 'DELETE':
             try:
-                subscribe = Subscribe.objects.get(siteuser_id=pk)
-                if subscribe.is_author(request.user):
-                    subscribe.delete()
-                    return Response(status=status.HTTP_204_NO_CONTENT)
-                else:
-                    return Response(
-                        {'detail': 'Пользователь не авториУказанной записи нет.'},
-                        status=status.HTTP_404_NOT_FOUND
-                    )
+                subscribe = Subscribe.objects.get(siteuser=user, author_id=pk)
+                subscribe.delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
             except Subscribe.DoesNotExist:
                 return Response(
-                    {'detail': 'Указанной записи нет.'},
+                    {'detail': 'у Вас нет подписки на этого пользователя.'},
                     status=status.HTTP_404_NOT_FOUND
                 )
+
         if request.method == 'POST':
-            print('-->>', 'POST')
-        return Response({'ee': 'eeeee'}, status=status.HTTP_400_BAD_REQUEST)
+            if pk == user.id:
+                return Response(
+                    {'detail': 'Нельзя подписаться на себя.'},
+                    status=status.HTTP_400_BAD_REQUEST)
+            try:
+                author = User.objects.get(id=pk)
+            except User.DoesNotExist:
+                return Response(
+                    {'detail': 'Такого пользователя нет.'},
+                    status=status.HTTP_404_NOT_FOUND)
+            try:
+                subscribe = Subscribe.objects.get(siteuser=user, author=author)
+                return Response(
+                    {'detail': 'Подписка уже есть.'},
+                    status=status.HTTP_400_BAD_REQUEST)
+            except Subscribe.DoesNotExist:
+                subscribe = Subscribe.objects.create(
+                    siteuser=user, author=author)
+                serialiser = SubscribeSerializer(subscribe)
+                return Response(serialiser.data)
 
 
 class TokenLoginView(views.APIView):
