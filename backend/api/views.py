@@ -146,18 +146,17 @@ class UserViewSet(mixins.CreateModelMixin,
     @action(detail=True, methods=['post', 'delete'],
             permission_classes=(IsAuthenticated,))
     def subscribe(self, request, pk=None):
-        
         user = request.user
+        author = get_object_or_404(User, id=pk)
 
         if request.method == 'DELETE':
             try:
-                subscribe = Subscribe.objects.get(siteuser=user, author_id=pk)
-                subscribe.delete()
+                Subscribe.objects.get(siteuser=user, author=author).delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
             except Subscribe.DoesNotExist:
                 return Response(
-                    {'detail': 'у Вас нет подписки на этого пользователя.'},
-                    status=status.HTTP_404_NOT_FOUND
+                    {'detail': 'Нет подписки на этого пользователя.'},
+                    status=status.HTTP_400_BAD_REQUEST
                 )
 
         if request.method == 'POST':
@@ -166,12 +165,6 @@ class UserViewSet(mixins.CreateModelMixin,
                     {'detail': 'Нельзя подписаться на себя.'},
                     status=status.HTTP_400_BAD_REQUEST)
             try:
-                author = User.objects.get(id=pk)
-            except User.DoesNotExist:
-                return Response(
-                    {'detail': 'Такого пользователя нет.'},
-                    status=status.HTTP_404_NOT_FOUND)
-            try:
                 subscribe = Subscribe.objects.get(siteuser=user, author=author)
                 return Response(
                     {'detail': 'Подписка уже есть.'},
@@ -179,8 +172,10 @@ class UserViewSet(mixins.CreateModelMixin,
             except Subscribe.DoesNotExist:
                 subscribe = Subscribe.objects.create(
                     siteuser=user, author=author)
-                serialiser = SubscribeSerializer(subscribe)
-                return Response(serialiser.data)
+                serialiser = SubscribeSerializer(
+                    instance=subscribe, context={'request': request})
+                return Response(serialiser.data,
+                                status=status.HTTP_201_CREATED)
 
 
 class TokenLoginView(views.APIView):

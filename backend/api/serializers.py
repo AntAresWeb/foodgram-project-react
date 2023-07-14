@@ -208,7 +208,7 @@ class SubscribeSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(source='author.first_name')
     last_name = serializers.CharField(source='author.last_name')
     is_subscribed = serializers.SerializerMethodField()
-    recipes = RecipeLaconicSerializer(source='recipes')
+    recipes = RecipeLaconicSerializer(source='author.recipes', many=True)
     recipes_count = serializers.SerializerMethodField()
 
     class Meta:
@@ -226,8 +226,11 @@ class SubscribeSerializer(serializers.ModelSerializer):
         else:
             return False
 
-    def recipes_count(self, obj):
-        return obj.recipes.aggregate(Count('id')).get('id__count')
+    def get_recipes_count(self, obj):
+        count = obj.author.recipes.aggregate(Count('id'))
+        print('--->>>', count)
+        return obj.author.recipes.aggregate(Count('id'))
+#        return obj.recipes.aggregate(Count('id')).get('id__count')
 
 
 class PasswordSerializer(serializers.Serializer):

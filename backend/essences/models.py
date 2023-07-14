@@ -45,6 +45,9 @@ class Subscribe(models.Model):
         verbose_name='Подписка на автора'
     )
 
+    class Meta:
+        unique_together = ('siteuser', 'author',)
+
     @property
     def is_owner(self, user):
         return self.siteuser == user
