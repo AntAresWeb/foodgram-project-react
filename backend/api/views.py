@@ -100,7 +100,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
 # Раздел пользовательской модели api/users/
 
-
 class UserViewSet(mixins.CreateModelMixin,
                   mixins.DestroyModelMixin,
                   mixins.ListModelMixin,
@@ -143,6 +142,16 @@ class UserViewSet(mixins.CreateModelMixin,
                     status=status.HTTP_401_UNAUTHORIZED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    def prepare_context(self):
+        context = {'request': self.request}
+        recipes_limit = self.request.query_params.get('recipes_limit')
+        if recipes_limit is not None:
+            try:
+                context['recipes_limit'] = int(recipes_limit)
+            except ValueError:
+                context['recipes_limit'] = 0
+        return context
+
     @action(detail=True, methods=['post', 'delete'],
             permission_classes=(IsAuthenticated,))
     def subscribe(self, request, pk=None):
@@ -173,9 +182,17 @@ class UserViewSet(mixins.CreateModelMixin,
                 subscribe = Subscribe.objects.create(
                     siteuser=user, author=author)
                 serialiser = SubscribeSerializer(
-                    instance=subscribe, context={'request': request})
+                    instance=subscribe, context=self.prepare_context
+                )
                 return Response(serialiser.data,
                                 status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=['get'],
+            permission_classes=(IsAuthenticated,))
+    def subscriptions(self, request):
+        serialiser = SubscribeSerializer(
+            context=self.prepare_context, many=True)
+        return Response(serialiser.data, status=status.HTTP_200_OK)
 
 
 class TokenLoginView(views.APIView):

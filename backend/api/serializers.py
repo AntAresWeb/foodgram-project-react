@@ -58,17 +58,6 @@ class TagSerialiser(serializers.ModelSerializer):
         read_only_fields = ('name', 'color', 'slug',)
 
 
-class Contetn_Serializer(serializers.ModelSerializer):
-    id = serializers.CharField(source='ingredient.id')
-    name = serializers.CharField(source='ingredient.name', read_only=True)
-    measurement_unit = serializers.CharField(
-        source='ingredient.measurement_unit', read_only=True)
-
-    class Meta:
-        model = Content
-        fields = ('id', 'name', 'measurement_unit', 'amount',)
-
-
 class ContetnSerializer(serializers.ModelSerializer):
     id = serializers.CharField(source='ingredient.id')
     name = serializers.CharField(source='ingredient.name', read_only=True)
@@ -194,9 +183,10 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         return value
 
 
-class RecipeLaconicSerializer(serializers.ModelSerializer):
+class RecipeShortSerializer(serializers.ModelSerializer):
+
     class Meta:
-        models = Recipe
+        model = Recipe
         fields = ('id', 'name', 'image', 'cooking_time',)
         read_only_fields = ('id', 'name', 'image', 'cooking_time',)
 
@@ -208,7 +198,7 @@ class SubscribeSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(source='author.first_name')
     last_name = serializers.CharField(source='author.last_name')
     is_subscribed = serializers.SerializerMethodField()
-    recipes = RecipeLaconicSerializer(source='author.recipes', many=True)
+    recipes = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
 
     class Meta:
@@ -220,17 +210,20 @@ class SubscribeSerializer(serializers.ModelSerializer):
                             'recipes_count',)
 
     def get_is_subscribed(self, obj):
-        user = self.context['request'].user
-        if user.is_authenticated is True:
-            return user.subscribes.filter(author=obj).exists()
-        else:
-            return False
+        return True
 
     def get_recipes_count(self, obj):
         count = obj.author.recipes.aggregate(Count('id'))
-        print('--->>>', count)
-        return obj.author.recipes.aggregate(Count('id'))
-#        return obj.recipes.aggregate(Count('id')).get('id__count')
+        return count.get('id__count')
+
+    def get_recipes(self, obj):
+        recipes_limit = self.context['recipes_limit']
+        if recipes_limit > 0:
+            recipes = obj.author.recipes.all()[:recipes_limit]
+        else:
+            recipes = obj.author.recipes.all()
+        serializer = RecipeShortSerializer(instance=recipes, many=True)
+        return serializer.data
 
 
 class PasswordSerializer(serializers.Serializer):
