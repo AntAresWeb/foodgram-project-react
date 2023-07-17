@@ -136,7 +136,6 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         )
 
     def create(self, validated_data):
-        print('user -->>', validated_data['author'])
         contents = validated_data.pop('contents')
         tags = validated_data.pop('tags')
         recipe = Recipe.objects.create(**validated_data)

@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
-from django.core.validators import MaxLengthValidator, MinValueValidator
+from django.core.validators import MinValueValidator
 
 User = get_user_model()
 
@@ -67,6 +67,9 @@ class Favorite(models.Model):
         verbose_name='Подборка рецептов'
     )
 
+    class Meta:
+        unique_together = ('siteuser', 'recipe',)
+
     @property
     def is_owner(self, user):
         return self.siteuser == user
@@ -86,6 +89,9 @@ class Shoppingcart(models.Model):
         related_name='shoppingcarts',
         verbose_name='Список рецептов для закупки ингредиентов'
     )
+
+    class Meta:
+        unique_together = ('siteuser', 'recipe',)
 
     @property
     def is_owner(self, user):

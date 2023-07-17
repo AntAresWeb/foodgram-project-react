@@ -34,10 +34,22 @@ class SubscribeAdmin(admin.ModelAdmin):
     list_display = ('id', 'siteuser', 'author')
 
 
+class FavoriteAdmin(admin.ModelAdmin):
+    list_display = ('id', 'siteuser', 'recipe')
+
+
+class ShoppingcartAdmin(admin.ModelAdmin):
+    list_display = ('id', 'siteuser', 'recipe')
+
+
+class TagAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'color', 'slug')
+
+
 admin.site.register(Content, ContentAdmin)
-admin.site.register(Favorite)
+admin.site.register(Favorite, FavoriteAdmin)
 admin.site.register(Ingredient, IngredientAdmin)
 admin.site.register(Recipe, RecipeAdmin)
-admin.site.register(Shoppingcart)
+admin.site.register(Shoppingcart, ShoppingcartAdmin)
 admin.site.register(Subscribe, SubscribeAdmin)
-admin.site.register(Tag)
+admin.site.register(Tag, TagAdmin)

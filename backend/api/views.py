@@ -22,6 +22,7 @@ from api.permissions import IsAuthor
 from api.serializers import (
     IngredientSerialiser,
     RecipeReadSerializer,
+    RecipeShortSerializer,
     RecipeWriteSerializer,
     SubscribeSerializer,
     TagSerialiser,
@@ -60,10 +61,11 @@ class TagViewSet(mixins.ListModelMixin,
 
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
-    permission_classes = (AllowAny, )
 
     def get_permissions(self):
-        if self.action in ("create", "update", "partial_update", "destroy",):
+        if self.action in ('create', 'update', 'partial_update',
+                           'destroy', 'favorite', 'shopping_cart',
+                           'download_shopping_cart',):
             permission_classes = (IsAuthenticated,)
         else:
             permission_classes = (AllowAny,)
@@ -81,24 +83,65 @@ class RecipeViewSet(viewsets.ModelViewSet):
             response['Content-Disposition'] = 'attachment; filename=%s'%file.name
         return response
 
-    @action(methods=['POST', 'DELETE'], detail=True,
-            permission_classes=(IsAuthenticated,))
+    @action(methods=['post', 'delete'], detail=True)
     def shopping_cart(self, request, pk=None):
+        user = request.user
         recipe = get_object_or_404(Recipe, id=pk)
-        print('recipe -->>', recipe)
-        print('user -->>', request.user)
-        print('self.action -->>', repr(self.action))
-        if self.action in ('destroy',):
-            recipe.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        if self.action in ('post',):
-            shopping_cart = Shoppingcart.objects.create(
-                siteuser=request.user, recipe=recipe)
-            shopping_cart.save()
-            return Response({'message': 'shopping_cart'},
-                            status=status.HTTP_200_OK)
+        if request.method == 'DELETE':
+            try:
+                Shoppingcart.objects.get(siteuser=user, recipe=recipe).delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            except Shoppingcart.DoesNotExist:
+                return Response(
+                    {'detail': 'В корзине этого рецепта нет.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        if request.method == 'POST':
+            try:
+                favorite = Shoppingcart.objects.get(
+                    siteuser=user, recipe=recipe)
+                return Response(
+                    {'detail': 'Этот рецепт уже есть в корзине.'},
+                    status=status.HTTP_400_BAD_REQUEST)
+            except Shoppingcart.DoesNotExist:
+                favorite = Shoppingcart.objects.create(
+                    siteuser=user, recipe=recipe)
+                serialiser = RecipeShortSerializer(
+                    instance=favorite.recipe, many=False)
+                return Response(serialiser.data,
+                                status=status.HTTP_201_CREATED)
+
+    @action(methods=['post', 'delete'], detail=True)
+    def favorite(self, request, pk=None):
+        user = request.user
+        recipe = get_object_or_404(Recipe, id=pk)
+        if request.method == 'DELETE':
+            try:
+                Favorite.objects.get(siteuser=user, recipe=recipe).delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            except Favorite.DoesNotExist:
+                return Response(
+                    {'detail': 'Этого рецепта нет в избранных.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        if request.method == 'POST':
+            try:
+                favorite = Favorite.objects.get(siteuser=user, recipe=recipe)
+                return Response(
+                    {'detail': 'Этот рецепт уже есть в избранных.'},
+                    status=status.HTTP_400_BAD_REQUEST)
+            except Favorite.DoesNotExist:
+                favorite = Favorite.objects.create(
+                    siteuser=user, recipe=recipe)
+                serialiser = RecipeShortSerializer(
+                    instance=favorite.recipe, many=False)
+                return Response(serialiser.data,
+                                status=status.HTTP_201_CREATED)
 
 # Раздел пользовательской модели api/users/
+
 
 class UserViewSet(mixins.CreateModelMixin,
                   mixins.DestroyModelMixin,
