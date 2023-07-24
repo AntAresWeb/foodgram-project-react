@@ -1,6 +1,6 @@
-import uuid
+import csv
 
-from django.db.models import Avg
+from django.db.models import Sum
 from django.core.mail import send_mail
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
@@ -78,9 +78,28 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     @action(methods=['GET'], detail=False, url_path='download_shopping_cart')
     def download_shopping_cart(self, request):
-        with open('file.csv', 'r') as file:
-            response = HttpResponse(file, content_type='application/msword')
-            response['Content-Disposition'] = 'attachment; filename=%s'%file.name
+        user = request.user
+        qs_recipes = user.shoppingcarts.values('recipe')
+        qs_contents = Content.objects.filter(
+            recipe__in=qs_recipes).select_related('ingredient')
+        shopping_list = qs_contents.values(
+            'ingredient__name',
+            'ingredient__measurement_unit').annotate(
+                amount=Sum('amount')).order_by('ingredient__name')
+
+        response = HttpResponse(
+            content_type='text/csv',
+            headers={
+                'Content-Disposition': 'attachment; filename="shopinglist.csv"'
+            },
+        )
+
+        writer = csv.writer(response)
+        writer.writerow(['Список покупок'])
+        for item in shopping_list:
+            writer.writerow((item['ingredient__name'],
+                             item['ingredient__measurement_unit'],
+                             item['amount'],))
         return response
 
     @action(methods=['post', 'delete'], detail=True)
