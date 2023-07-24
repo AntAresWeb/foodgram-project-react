@@ -110,10 +110,12 @@ class RecipeReadSerializer(serializers.ModelSerializer):
                   'image', 'text', 'cooking_time',)
 
     def get_is_favorited(self, obj):
-        return False
+        user = self.context['request'].user
+        return obj.favoriters.filter(siteuser=user).exists()
 
     def get_is_in_shopping_cart(self, obj):
-        return False
+        user = self.context['request'].user
+        return obj.shoppingcarts.filter(siteuser=user).exists()
 
 
 class RecipeWriteSerializer(serializers.ModelSerializer):
@@ -149,6 +151,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         return recipe
 
     def update(self, instance, validated_data):
+        print('>>> call update >>>')
         contents = validated_data.pop('contents')
 
         tags = validated_data.pop('tags')
@@ -216,7 +219,9 @@ class SubscribeSerializer(serializers.ModelSerializer):
         return count.get('id__count')
 
     def get_recipes(self, obj):
-        recipes_limit = self.context['recipes_limit']
+        request = self.context['request']
+        print(request)
+        recipes_limit = int(request['recipes_limit'])
         if recipes_limit > 0:
             recipes = obj.author.recipes.all()[:recipes_limit]
         else:

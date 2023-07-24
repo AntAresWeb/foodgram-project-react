@@ -72,7 +72,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return [permission() for permission in permission_classes]
 
     def get_serializer_class(self):
-        if self.action in ('create', 'update', 'partial_update', 'destroy',):
+        if self.action in ('create', 'partial_update', 'destroy',):
+            print('--->>> RecipeWriteSerializer')
             return RecipeWriteSerializer
         return RecipeReadSerializer
 
@@ -252,8 +253,7 @@ class UserViewSet(mixins.CreateModelMixin,
     @action(detail=False, methods=['get'],
             permission_classes=(IsAuthenticated,))
     def subscriptions(self, request):
-        serialiser = SubscribeSerializer(
-            context=self.prepare_context, many=True)
+        serialiser = SubscribeSerializer(many=True)
         return Response(serialiser.data, status=status.HTTP_200_OK)
 
 
