@@ -14,7 +14,10 @@ from rest_framework_simplejwt.tokens import (BlacklistedToken,
                                              RefreshToken,
                                              Token)
 
-from api.filters import IngredientFilter
+from api.filters import (
+    TagsFilterBackend,
+    FavoritedFilterBackend,
+)
 from essences.models import (
     Content, Favorite, Ingredient, Recipe, Shoppingcart, Subscribe, Tag, User
 )
@@ -60,7 +63,12 @@ class TagViewSet(mixins.ListModelMixin,
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
+
     queryset = Recipe.objects.all()
+    filter_backends = (
+        TagsFilterBackend,
+        FavoritedFilterBackend,
+    )
 
     def get_permissions(self):
         if self.action in ('create', 'update', 'partial_update',
