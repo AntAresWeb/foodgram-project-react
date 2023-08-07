@@ -1,10 +1,9 @@
 import csv
 
 from django.db.models import Sum
-from django.core.mail import send_mail
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
-from rest_framework import filters, mixins, status, views, viewsets
+from rest_framework import mixins, status, views, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
@@ -80,8 +79,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return [permission() for permission in permission_classes]
 
     def get_serializer_class(self):
-        if self.action in ('create', 'partial_update', 'destroy',):
-            print('--->>> RecipeWriteSerializer')
+        if self.action in ('create', 'update', 'partial_update', 'destroy',):
             return RecipeWriteSerializer
         return RecipeReadSerializer
 
