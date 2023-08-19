@@ -8,36 +8,20 @@ from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import (BlacklistedToken,
-                                             OutstandingToken,
-                                             RefreshToken)
+                                             OutstandingToken, RefreshToken)
 
-from api.filters import (
-    AuthorFilterBackend,
-    FavoritedFilterBackend,
-    ShoppingCartFilterBackend,
-    TagsFilterBackend)
-from essences.models import (
-    Content,
-    Favorite,
-    Ingredient,
-    Recipe,
-    Shoppingcart,
-    Subscribe,
-    Tag,
-    User)
+from api.filters import (AuthorFilterBackend, FavoritedFilterBackend,
+                         ShoppingCartFilterBackend, TagsFilterBackend)
 from api.permissions import IsAuthor
-from api.serializers import (
-    IngredientSerialiser,
-    RecipeReadSerializer,
-    RecipeShortSerializer,
-    RecipeWriteSerializer,
-    SubscribeSerializer,
-    TagSerialiser)
+from api.serializers import (IngredientSerialiser, RecipeReadSerializer,
+                             RecipeShortSerializer, RecipeWriteSerializer,
+                             SubscribeSerializer, TagSerialiser)
 from core.permissions import IsTokenValid
-from .serializers import (LoginSerializer,
-                          PasswordSerializer,
-                          UserListSerializer,
-                          UserSerializer)
+from essences.models import (Content, Favorite, Ingredient, Recipe,
+                             Shoppingcart, Subscribe, Tag, User)
+
+from .serializers import (LoginSerializer, PasswordSerializer,
+                          UserListSerializer, UserSerializer)
 
 
 class IngredientViewSet(mixins.ListModelMixin,

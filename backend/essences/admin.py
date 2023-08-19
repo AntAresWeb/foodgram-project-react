@@ -1,7 +1,7 @@
 from django.contrib import admin
 
-from essences.models import (
-    Content, Favorite, Ingredient, Recipe, Subscribe, Shoppingcart, Tag)
+from essences.models import (Content, Favorite, Ingredient, Recipe,
+                             Shoppingcart, Subscribe, Tag)
 
 """ Как настроить модель в админке
 class TitleAdmin(admin.ModelAdmin):
