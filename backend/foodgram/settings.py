@@ -1,10 +1,8 @@
 from datetime import timedelta
 from pathlib import Path
 
-from django.core.management.utils import get_random_secret_key
-
 from decouple import config
-
+from django.core.management.utils import get_random_secret_key
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -12,7 +10,7 @@ SECRET_KEY = config('SECRET_KEY', get_random_secret_key())
 
 DEBUG = config('DEBUG', True)
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+ALLOWED_HOSTS = config('ALLOWED_HOSTS').split(' ')
 
 AUTH_USER_MODEL = 'users.User'
 
@@ -73,8 +71,8 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': config('POSTGRES_DB', 'django'),
         'USER': config('POSTGRES_USER', 'django'),
-        'PASSWORD': config('POSTGRES_PASSWORD', ''),
-        'HOST': config('DB_HOST', ''),
+        'PASSWORD': config('POSTGRES_PASSWORD', 'django'),
+        'HOST': config('DB_HOST', '127.0.0.1'),
         'PORT': config('DB_PORT', 5432)
     }
 }
@@ -117,7 +115,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'static'
+STATIC_ROOT = BASE_DIR / 'static/static'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -130,7 +128,6 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
     ],
     'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend',
@@ -140,9 +137,10 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=500),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     'SIGNING_KEY': SECRET_KEY,
+    'AUTH_HEADER_TYPES': ('Token', 'Bearer',),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
     'TOKEN_USER_CLASS': 'rest_framework_simplejwt.models.TokenUser',

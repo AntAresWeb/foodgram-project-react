@@ -1,6 +1,6 @@
-from django.db import models
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
+from django.db import models
 
 User = get_user_model()
 
@@ -17,62 +17,92 @@ class Ingredient(models.Model):
 
 
 class Content(models.Model):
-    igredient = models.ForeignKey(
-        Ingredient, on_delete=models.CASCADE)
+    ingredient = models.ForeignKey(
+        Ingredient,
+        on_delete=models.CASCADE,
+        related_name='contents'
+    )
     recipe = models.ForeignKey(
-        'Recipe', related_name='content', on_delete=models.CASCADE)
-    amount = models.IntegerField(validators=[MinValueValidator])
+        'Recipe',
+        on_delete=models.CASCADE,
+        related_name='contents'
+    )
+    amount = models.IntegerField(
+        default=1, validators=[MinValueValidator(1)])
 
 
 class Subscribe(models.Model):
     siteuser = models.ForeignKey(
         User,
-        related_name='subscriber',
+        related_name='subscribes',
         on_delete=models.CASCADE,
         verbose_name='Подписчик',
     )
     author = models.ForeignKey(
         User,
-        related_name='subscribe',
+        related_name='subscribers',
         on_delete=models.CASCADE,
         verbose_name='Подписка на автора'
     )
+
+    class Meta:
+        unique_together = ('siteuser', 'author',)
+
+    @property
+    def is_owner(self, user):
+        return self.siteuser == user
 
 
 class Favorite(models.Model):
     siteuser = models.ForeignKey(
         User,
-        related_name='favoriter',
+        related_name='favorites',
         on_delete=models.CASCADE,
         verbose_name='Пользователь',
     )
     recipe = models.ForeignKey(
         'Recipe',
-        related_name='favorite',
+        related_name='favoriters',
         on_delete=models.CASCADE,
         verbose_name='Подборка рецептов'
     )
+
+    class Meta:
+        unique_together = ('siteuser', 'recipe',)
+
+    @property
+    def is_owner(self, user):
+        return self.siteuser == user
 
 
 class Shoppingcart(models.Model):
     siteuser = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
+        related_name='shoppingcarts',
         verbose_name='Пользователь',
     )
-    recipe = models.ManyToManyField(
+    recipe = models.ForeignKey(
         'Recipe',
+        on_delete=models.CASCADE,
         blank=True,
-        related_name='shopingcart',
+        related_name='shoppingcarts',
         verbose_name='Список рецептов для закупки ингредиентов'
     )
+
+    class Meta:
+        unique_together = ('siteuser', 'recipe',)
+
+    @property
+    def is_owner(self, user):
+        return self.siteuser == user
 
 
 class Recipe(models.Model):
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='recipe',
+        related_name='recipes',
         verbose_name='Автор рецепта',
     )
     name = models.CharField(
@@ -83,13 +113,17 @@ class Recipe(models.Model):
         max_length=200,
         verbose_name='Описание рецепта'
     )
-    tag = models.ManyToManyField(
+    tags = models.ManyToManyField(
         Tag,
-        related_name='recipe',
-        blank=True,
+        related_name='recipes',
         verbose_name='Список тегов'
     )
-    picture = models.ImageField(
+    ingredients = models.ManyToManyField(
+        Ingredient,
+        through=Content,
+        related_name='recipes'
+    )
+    image = models.ImageField(
         upload_to='recipes/images/',
         null=True,
         default=None
@@ -109,5 +143,6 @@ class Recipe(models.Model):
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
 
-    def __str__(self):
-        self.name
+    @property
+    def is_author(self, user):
+        return self.author == user
