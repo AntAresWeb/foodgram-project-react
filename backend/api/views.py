@@ -5,21 +5,26 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from rest_framework import mixins, status, views, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import (BlacklistedToken,
                                              OutstandingToken,
-                                             RefreshToken,
-                                             Token)
+                                             RefreshToken)
 
 from api.filters import (
-    TagsFilterBackend,
+    AuthorFilterBackend,
     FavoritedFilterBackend,
-)
+    ShoppingCartFilterBackend,
+    TagsFilterBackend)
 from essences.models import (
-    Content, Favorite, Ingredient, Recipe, Shoppingcart, Subscribe, Tag, User
-)
+    Content,
+    Favorite,
+    Ingredient,
+    Recipe,
+    Shoppingcart,
+    Subscribe,
+    Tag,
+    User)
 from api.permissions import IsAuthor
 from api.serializers import (
     IngredientSerialiser,
@@ -27,8 +32,7 @@ from api.serializers import (
     RecipeShortSerializer,
     RecipeWriteSerializer,
     SubscribeSerializer,
-    TagSerialiser,
-)
+    TagSerialiser)
 from core.permissions import IsTokenValid
 from .serializers import (LoginSerializer,
                           PasswordSerializer,
@@ -63,23 +67,26 @@ class TagViewSet(mixins.ListModelMixin,
 
 class RecipeViewSet(viewsets.ModelViewSet):
 
-    queryset = Recipe.objects.all()
+    queryset = Recipe.objects.all().order_by('pk')
     filter_backends = (
-        TagsFilterBackend,
+        AuthorFilterBackend,
         FavoritedFilterBackend,
+        ShoppingCartFilterBackend,
+        TagsFilterBackend,
     )
 
     def get_permissions(self):
-        if self.action in ('create', 'update', 'partial_update',
-                           'destroy', 'favorite', 'shopping_cart',
-                           'download_shopping_cart',):
+        if self.action in ('create', 'update', 'destroy', 'favorite',
+                           'shopping_cart', 'download_shopping_cart',):
             permission_classes = (IsAuthenticated,)
+        elif self.action in ('partial_update',):
+            permission_classes = (IsAuthor,)
         else:
             permission_classes = (AllowAny,)
         return [permission() for permission in permission_classes]
 
     def get_serializer_class(self):
-        if self.action in ('create', 'update', 'partial_update', 'destroy',):
+        if self.action in ('create', 'partial_update', 'destroy',):
             return RecipeWriteSerializer
         return RecipeReadSerializer
 
@@ -184,7 +191,8 @@ class UserViewSet(mixins.CreateModelMixin,
             return UserSerializer
 
     def get_permissions(self):
-        if self.action in ('set_password', 'me', 'retrieve', 'subscribe'):
+        if self.action in ('set_password', 'me', 'retrieve', 'subscribe',
+                           'subscriptions',):
             permission_classes = (IsAuthenticated, IsTokenValid,)
         else:
             permission_classes = (AllowAny,)
@@ -259,7 +267,14 @@ class UserViewSet(mixins.CreateModelMixin,
     @action(detail=False, methods=['get'],
             permission_classes=(IsAuthenticated,))
     def subscriptions(self, request):
-        serialiser = SubscribeSerializer(many=True)
+        recipes_limit = int(request.query_params.get('recipes_limit'))
+        context = {'recipes_limit': recipes_limit}
+        queryset = Subscribe.objects.filter(siteuser=request.user)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serialiser = SubscribeSerializer(page, context=context, many=True)
+            return self.get_paginated_response(serialiser.data)
+        serialiser = SubscribeSerializer(queryset, context=context, many=True)
         return Response(serialiser.data, status=status.HTTP_200_OK)
 
 

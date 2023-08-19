@@ -47,7 +47,7 @@ class User(AbstractUser):
 
     class Meta:
         ordering = ('-id',)
-        unique_together = ('username', 'email',) 
+        unique_together = ('username', 'email',)
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
         ordering = ('-id',)

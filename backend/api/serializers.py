@@ -1,8 +1,7 @@
 import base64
 
-from django.db.models import Avg, Max, Min, Sum, Count
+from django.db.models import Count
 from django.core.files.base import ContentFile
-from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 
@@ -69,7 +68,7 @@ class ContetnSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'measurement_unit', 'amount',)
 
     def to_internal_value(self, data):
-        id = data.get('id')
+        id = int(data.get('id'))
         amount = data.get('amount')
         if not id:
             raise serializers.ValidationError(
@@ -111,10 +110,14 @@ class RecipeReadSerializer(serializers.ModelSerializer):
 
     def get_is_favorited(self, obj):
         user = self.context['request'].user
+        if not user.is_authenticated:
+            return False
         return obj.favoriters.filter(siteuser=user).exists()
 
     def get_is_in_shopping_cart(self, obj):
         user = self.context['request'].user
+        if not user.is_authenticated:
+            return False
         return obj.shoppingcarts.filter(siteuser=user).exists()
 
 
@@ -123,13 +126,14 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
     tags = serializers.PrimaryKeyRelatedField(
         queryset=Tag.objects.all(), many=True)
     author = UserListSerializer(many=False,
-                                default=serializers.CurrentUserDefault())
-    image = Base64ImageField()
+                                default=serializers.CurrentUserDefault(),
+                                read_only=True)
+    image = Base64ImageField(required=False)
 
     class Meta:
         model = Recipe
-        fields = ('author', 'tags', 'ingredients', 'name', 'text',
-                  'cooking_time', 'image')
+        fields = ('name', 'id', 'tags', 'cooking_time',
+                  'text', 'ingredients', 'author', 'image')
         validators = (
             UniqueTogetherValidator(
                 queryset=Ingredient.objects.all(),
@@ -141,6 +145,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         contents = validated_data.pop('contents')
         tags = validated_data.pop('tags')
         recipe = Recipe.objects.create(**validated_data)
+        recipe.author = self.context['request'].user
         recipe.tags.add(*tags)
 
         for content in contents:
@@ -151,7 +156,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         return recipe
 
     def update(self, instance, validated_data):
-        print('>>> call update >>>')
+        instance.author = self.context['request'].user
         contents = validated_data.pop('contents')
 
         tags = validated_data.pop('tags')
@@ -219,9 +224,7 @@ class SubscribeSerializer(serializers.ModelSerializer):
         return count.get('id__count')
 
     def get_recipes(self, obj):
-        request = self.context['request']
-        print(request)
-        recipes_limit = int(request['recipes_limit'])
+        recipes_limit = self.context['recipes_limit']
         if recipes_limit > 0:
             recipes = obj.author.recipes.all()[:recipes_limit]
         else:

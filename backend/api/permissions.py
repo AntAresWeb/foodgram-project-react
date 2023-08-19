@@ -4,4 +4,4 @@ from rest_framework import permissions
 class IsAuthor(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
-        return obj.is_author(request.user)
+        return obj.author == request.user

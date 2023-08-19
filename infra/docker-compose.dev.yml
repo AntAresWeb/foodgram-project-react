@@ -22,8 +22,8 @@ services:
       - ../backend:/app
       - static_vol:/app/static
       - media_vol:/app/media
-#    expose:
-#      - 8008
+    expose:
+      - 8008
     ports:
       - "8008:8008"
 

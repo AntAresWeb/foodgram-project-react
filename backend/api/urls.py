@@ -6,8 +6,7 @@ from api.views import (IngredientViewSet,
                        TagViewSet,
                        TokenLoginView,
                        TokenLogoutView,
-                       UserViewSet
-)
+                       UserViewSet)
 
 router = routers.DefaultRouter()
 
