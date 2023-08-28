@@ -1,11 +1,10 @@
-import base64
-
-from django.core.files.base import ContentFile
 from django.db.models import Count
+from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 
-from essences.models import Content, Ingredient, Recipe, Subscribe, Tag, User
+from essences.models import Content, Ingredient, Recipe, Tag, User
+from users.models import Subscribe
 
 
 class UserListSerializer(serializers.ModelSerializer):
@@ -83,15 +82,6 @@ class ContetnSerializer(serializers.ModelSerializer):
             'id': id,
             'amount': amount,
         }
-
-
-class Base64ImageField(serializers.ImageField):
-    def to_internal_value(self, data):
-        if isinstance(data, str) and data.startswith('data:image'):
-            format, imgstr = data.split(';base64,')
-            ext = format.split('/')[-1]
-            data = ContentFile(base64.b64decode(imgstr), name='temp.' + ext)
-        return super().to_internal_value(data)
 
 
 class RecipeReadSerializer(serializers.ModelSerializer):
