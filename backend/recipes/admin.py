@@ -1,20 +1,8 @@
 from django.contrib import admin
 
-from essences.models import (Content, Favorite, Ingredient, Recipe,
-                             Shoppingcart, Subscribe, Tag)
-
-""" Как настроить модель в админке
-class TitleAdmin(admin.ModelAdmin):
-    list_display = (
-        'pk',
-        'name',
-        'year',
-        'category',
-    )
-    list_editable = ('category',)
-    search_fields = ('name',)
-    empty_value_display = '-пусто-'
-"""
+from recipes.models import (Content, Favorite, Ingredient, Recipe,
+                            Shoppingcart, Tag)
+from users.models import Subscribe
 
 
 class ContentAdmin(admin.ModelAdmin):

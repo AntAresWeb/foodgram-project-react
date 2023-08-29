@@ -1,6 +1,8 @@
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
 
+import core.constants as const
+
 
 class UserManager(BaseUserManager):
     """ Создает и возвращает пользователя с емэйлом, паролем и именем. """
@@ -33,11 +35,28 @@ class UserManager(BaseUserManager):
 class User(AbstractUser):
     email = models.EmailField(
         ('email address'),
-        max_length=254,
+        max_length=const.FIELD_LENGTH_254,
         unique=True,
+        verbose_name='e-mail пользователя',
         error_messages={
             'unique': ("Такой e-mail уже используеется другим пользователем."),
         },
+    )
+    username = models.CharField(
+        max_length=const.FIELD_LENGTH_150,
+        unique=True,
+        verbose_name='логин пользователя',
+        error_messages={
+            'unique': ("Пользователь с таким логином уже существует."),
+        },
+    )
+    first_name = models.CharField(
+        max_length=const.FIELD_LENGTH_150,
+        blank=True
+    )
+    last_name = models.CharField(
+        max_length=const.FIELD_LENGTH_150,
+        blank=True
     )
 
     objects = UserManager()
@@ -46,8 +65,29 @@ class User(AbstractUser):
         return self.username
 
     class Meta:
-        ordering = ('-id',)
+        ordering = ('username',)
         unique_together = ('username', 'email',)
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
-        ordering = ('-id',)
+
+
+class Subscribe(models.Model):
+    siteuser = models.ForeignKey(
+        User,
+        related_name='subscribes',
+        on_delete=models.CASCADE,
+        verbose_name='Подписчик',
+    )
+    author = models.ForeignKey(
+        User,
+        related_name='subscribers',
+        on_delete=models.CASCADE,
+        verbose_name='Подписка на автора'
+    )
+
+    class Meta:
+        unique_together = ('siteuser', 'author',)
+
+    @property
+    def is_owner(self, user):
+        return self.siteuser == user

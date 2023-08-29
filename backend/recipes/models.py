@@ -1,14 +1,38 @@
+from colorfield.fields import ColorField
 from django.contrib.auth import get_user_model
-from django.core.validators import MinValueValidator
+from django.core.validators import (MaxValueValidator, MinValueValidator,
+                                    RegexValidator)
 from django.db import models
+
+import core.constants as const
 
 User = get_user_model()
 
 
 class Tag(models.Model):
-    name = models.CharField(max_length=200)
-    color = models.CharField(max_length=7, blank=True)
-    slug = models.SlugField(max_length=200, blank=True)
+    name = models.CharField(
+        max_length=const.FIELD_LENGTH_200,
+        verbose_name='Имя тэга'
+    )
+    color = ColorField(
+        blank=True,
+        verbose_name='Цвет'
+    )
+    slug = models.SlugField(
+        max_length=const.FIELD_LENGTH_200,
+        unique=True,
+        verbose_name='Слаг',
+        validators=[
+            RegexValidator(
+                regex='^[-a-zA-Z0-9_]+$',
+                message='В слаге использованы недопустимые символы.',
+            ),
+        ]
+    )
+
+    class Meta:
+        verbose_name = 'Тэг'
+        verbose_name_plural = 'Тэги'
 
 
 class Ingredient(models.Model):
@@ -29,28 +53,6 @@ class Content(models.Model):
     )
     amount = models.IntegerField(
         default=1, validators=[MinValueValidator(1)])
-
-
-class Subscribe(models.Model):
-    siteuser = models.ForeignKey(
-        User,
-        related_name='subscribes',
-        on_delete=models.CASCADE,
-        verbose_name='Подписчик',
-    )
-    author = models.ForeignKey(
-        User,
-        related_name='subscribers',
-        on_delete=models.CASCADE,
-        verbose_name='Подписка на автора'
-    )
-
-    class Meta:
-        unique_together = ('siteuser', 'author',)
-
-    @property
-    def is_owner(self, user):
-        return self.siteuser == user
 
 
 class Favorite(models.Model):
