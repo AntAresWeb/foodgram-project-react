@@ -36,7 +36,6 @@ class UserManager(BaseUserManager):
 class User(AbstractUser):
     """ Модель пользователя. """
     email = models.EmailField(
-        ('email address'),
         max_length=const.FIELD_LENGTH_254,
         unique=True,
         verbose_name='E-mail пользователя',
@@ -53,7 +52,7 @@ class User(AbstractUser):
         },
         validators=[
             RegexValidator(
-                regex='^[\w.@+-]+\z',
+                regex=r'^[\w.@+-]+$',
                 message='Имя пользователя содержит недопустимые символы',
             ),
         ]
@@ -76,7 +75,7 @@ class User(AbstractUser):
         ordering = ('username',)
         unique_together = ('username', 'email',)
         verbose_name = 'Пользователь'
-        verbose_name_plural = 'Пользователи'
+#        verbose_name_plural = 'Пользователи'
 
 
 class Subscribe(models.Model):
@@ -102,6 +101,12 @@ class Subscribe(models.Model):
         unique_together = ('siteuser', 'author',)
         verbose_name = 'Подписка'
         verbose_name_plural = 'Подписки'
+        constraints = (
+            models.CheckConstraint(
+                name='%(app_label)s_%(class)s_prevent_self_follow',
+                check=~models.Q(siteuser=models.F('author')),
+            ),
+        )
 
     @property
     def is_owner(self, user):

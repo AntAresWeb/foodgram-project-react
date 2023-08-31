@@ -12,13 +12,13 @@ from rest_framework_simplejwt.tokens import (BlacklistedToken,
 
 from api.filters import (AuthorFilterBackend, FavoritedFilterBackend,
                          ShoppingCartFilterBackend, TagsFilterBackend)
-from api.permissions import IsAuthor
+from api.permissions import IsAuthor, IsTokenValid
 from api.serializers import (IngredientSerialiser, RecipeReadSerializer,
                              RecipeShortSerializer, RecipeWriteSerializer,
                              SubscribeSerializer, TagSerialiser)
-from core.permissions import IsTokenValid
-from essences.models import (Content, Favorite, Ingredient, Recipe,
-                             Shoppingcart, Subscribe, Tag, User)
+from recipes.models import (Content, Favorite, Ingredient, Recipe,
+                            Shoppingcart, Tag, User)
+from users.models import Subscribe
 
 from .serializers import (LoginSerializer, PasswordSerializer,
                           UserListSerializer, UserSerializer)
@@ -51,7 +51,7 @@ class TagViewSet(mixins.ListModelMixin,
 
 class RecipeViewSet(viewsets.ModelViewSet):
 
-    queryset = Recipe.objects.all().order_by('pk')
+    queryset = Recipe.objects.all()
     filter_backends = (
         AuthorFilterBackend,
         FavoritedFilterBackend,
@@ -156,8 +156,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
                     instance=favorite.recipe, many=False)
                 return Response(serialiser.data,
                                 status=status.HTTP_201_CREATED)
-
-# Раздел пользовательской модели api/users/
 
 
 class UserViewSet(mixins.CreateModelMixin,

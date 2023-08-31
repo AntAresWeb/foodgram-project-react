@@ -3,7 +3,7 @@ from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 
-from essences.models import Content, Ingredient, Recipe, Tag, User
+from recipes.models import Content, Ingredient, Recipe, Tag, User
 from users.models import Subscribe
 
 
@@ -73,6 +73,10 @@ class ContetnSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {'id': f'Это поле обязательно. Строка: {data}'}
             )
+        if amount == 0:
+            raise serializers.ValidationError(
+                {'amount': f'Количество должно быть > 0. Строка: {data}'}
+            )
         if not amount:
             raise serializers.ValidationError(
                 {'amount': f'Это поле обязательно. Строка: {data}'}
@@ -102,7 +106,7 @@ class RecipeReadSerializer(serializers.ModelSerializer):
         user = self.context['request'].user
         if not user.is_authenticated:
             return False
-        return obj.favoriters.filter(siteuser=user).exists()
+        return obj.favorites.filter(siteuser=user).exists()
 
     def get_is_in_shopping_cart(self, obj):
         user = self.context['request'].user
@@ -112,12 +116,24 @@ class RecipeReadSerializer(serializers.ModelSerializer):
 
 
 class RecipeWriteSerializer(serializers.ModelSerializer):
-    ingredients = ContetnSerializer(many=True, source='contents')
+    """
+    Сериализатор для создания/изменения рецепта
+    cooking_time - валидация осуществляется на уровне модели
+    source='contents' используется для передачи кверисета recipe.contents,
+    содержащего Content-объекты, связанные с текущим объектом Recipe
+    """
+    ingredients = ContetnSerializer(
+        many=True,
+        source='contents'
+    )
     tags = serializers.PrimaryKeyRelatedField(
-        queryset=Tag.objects.all(), many=True)
-    author = UserListSerializer(many=False,
-                                default=serializers.CurrentUserDefault(),
-                                read_only=True)
+        queryset=Tag.objects.all(),
+        many=True
+    )
+    author = UserListSerializer(
+        many=False,
+        default=serializers.CurrentUserDefault()
+    )
     image = Base64ImageField(required=False)
 
     class Meta:
@@ -130,6 +146,14 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
                 fields=('ingredients', )
             ),
         )
+
+    def to_representation(self, instance):
+        serializer = RecipeReadSerializer(
+            instance=instance,
+            context=self.context,
+            many=False
+        )
+        return serializer.data
 
     def create(self, validated_data):
         contents = validated_data.pop('contents')
@@ -164,6 +188,10 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         return instance
 
     def validate_ingredients(self, value):
+        if len(value) < 1:
+            raise serializers.ValidationError(
+                'Список ингредиентов пуст. В рецепте должны быть ингридиенты.'
+            )
         ids = [content.get('id') for content in value]
         dup_ids = [x for i, x in enumerate(ids) if i != ids.index(x)]
         if len(dup_ids) > 0:
@@ -176,6 +204,19 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         if len(not_ids):
             raise serializers.ValidationError(
                 f'В базе нет ингредиентов с id = {not_ids}'
+            )
+        return value
+
+    def validate_tags(self, value):
+        if len(value) < 1:
+            raise serializers.ValidationError(
+                'Список тэгов пуст. Нужно указать хотя бы один тэг.'
+            )
+        ids = [content.id for content in value]
+        dup_ids = [x for i, x in enumerate(ids) if i != ids.index(x)]
+        if len(dup_ids) > 0:
+            raise serializers.ValidationError(
+                f'В списке тэгов присутствуют дубликаты c id = {dup_ids}'
             )
         return value
 
