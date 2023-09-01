@@ -134,3 +134,5 @@ dmypy.json
 media/
 static/
 .vscode/
+.env*
+.flake8*

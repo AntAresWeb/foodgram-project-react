@@ -75,12 +75,12 @@ class User(AbstractUser):
         ordering = ('username',)
         unique_together = ('username', 'email',)
         verbose_name = 'Пользователь'
-#        verbose_name_plural = 'Пользователи'
+        verbose_name_plural = 'Пользователи'
 
 
 class Subscribe(models.Model):
     """ Модель подписки пользователя на автора рецепта. """
-    siteuser = models.ForeignKey(
+    user = models.ForeignKey(
         User,
         related_name='subscribes',
         on_delete=models.CASCADE,
@@ -94,20 +94,20 @@ class Subscribe(models.Model):
     )
 
     def __str__(self):
-        return f'{self.siteuser} -> {self.author}'
+        return f'{self.user} -> {self.author}'
 
     class Meta:
-        ordering = ('siteuser', 'author',)
-        unique_together = ('siteuser', 'author',)
+        ordering = ('user', 'author',)
+        unique_together = ('user', 'author',)
         verbose_name = 'Подписка'
         verbose_name_plural = 'Подписки'
         constraints = (
             models.CheckConstraint(
                 name='%(app_label)s_%(class)s_prevent_self_follow',
-                check=~models.Q(siteuser=models.F('author')),
+                check=~models.Q(user=models.F('author')),
             ),
         )
 
     @property
     def is_owner(self, user):
-        return self.siteuser == user
+        return self.user == user
