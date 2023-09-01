@@ -3,6 +3,7 @@ from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 
+import core.constants as const
 from recipes.models import Content, Ingredient, Recipe, Tag, User
 from users.models import Subscribe
 
@@ -61,25 +62,39 @@ class ContetnSerializer(serializers.ModelSerializer):
     name = serializers.CharField(source='ingredient.name', read_only=True)
     measurement_unit = serializers.CharField(
         source='ingredient.measurement_unit', read_only=True)
+    amount = serializers.IntegerField(
+        min_value=const.MIN_AMOUNT, max_value=const.MAX_AMOUNT)
 
     class Meta:
         model = Content
         fields = ('id', 'name', 'measurement_unit', 'amount',)
 
     def to_internal_value(self, data):
-        id = int(data.get('id'))
-        amount = data.get('amount')
+        try:
+            id = int(data.get('id'))
+        except ValueError:
+            raise serializers.ValidationError(
+                {'id': 'Должно быть числом.'}
+            )
         if not id:
             raise serializers.ValidationError(
                 {'id': f'Это поле обязательно. Строка: {data}'}
             )
-        if amount == 0:
+
+        try:
+            amount = int(data.get('amount'))
+        except ValueError:
             raise serializers.ValidationError(
-                {'amount': f'Количество должно быть > 0. Строка: {data}'}
+                {'amount': 'Количество должно быть числом.'}
             )
         if not amount:
             raise serializers.ValidationError(
                 {'amount': f'Это поле обязательно. Строка: {data}'}
+            )
+        if amount not in range(const.MIN_AMOUNT, const.MAX_AMOUNT + 1):
+            raise serializers.ValidationError(
+                {'amount': (f'Количество должно быть в пределах от '
+                            f'{const.MIN_AMOUNT} до {const.MAX_AMOUNT}')}
             )
 
         return {
@@ -106,13 +121,13 @@ class RecipeReadSerializer(serializers.ModelSerializer):
         user = self.context['request'].user
         if not user.is_authenticated:
             return False
-        return obj.favorites.filter(siteuser=user).exists()
+        return obj.favorites.filter(user=user).exists()
 
     def get_is_in_shopping_cart(self, obj):
         user = self.context['request'].user
         if not user.is_authenticated:
             return False
-        return obj.shoppingcarts.filter(siteuser=user).exists()
+        return obj.shoppingcarts.filter(user=user).exists()
 
 
 class RecipeWriteSerializer(serializers.ModelSerializer):

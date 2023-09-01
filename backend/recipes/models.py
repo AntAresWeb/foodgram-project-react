@@ -90,7 +90,7 @@ class Content(models.Model):
 
 
 class UserRecipeRelation(models.Model):
-    siteuser = models.ForeignKey(
+    user = models.ForeignKey(
         User,
         related_name='%(class)ss',
         on_delete=models.CASCADE,
@@ -105,12 +105,12 @@ class UserRecipeRelation(models.Model):
 
     class Meta:
         abstract = True
-        ordering = ('siteuser', 'recipe',)
-        unique_together = ('siteuser', 'recipe',)
+        ordering = ('user', 'recipe',)
+        unique_together = ('user', 'recipe',)
 
     @property
     def is_owner(self, user):
-        return self.siteuser == user
+        return self.user == user
 
 
 class Favorite(UserRecipeRelation):

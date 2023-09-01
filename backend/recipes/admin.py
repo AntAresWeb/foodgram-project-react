@@ -4,7 +4,6 @@ from django.forms.models import BaseInlineFormSet
 
 from recipes.models import (Content, Favorite, Ingredient, Recipe,
                             Shoppingcart, Tag)
-from users.models import Subscribe
 
 
 class ContentAdmin(admin.ModelAdmin):
@@ -45,16 +44,12 @@ class RecipeAdmin(admin.ModelAdmin):
     ingredients_list.short_description = 'Ингредиенты'
 
 
-class SubscribeAdmin(admin.ModelAdmin):
-    list_display = ('id', 'siteuser', 'author')
-
-
 class FavoriteAdmin(admin.ModelAdmin):
-    list_display = ('id', 'siteuser', 'recipe')
+    list_display = ('id', 'user', 'recipe')
 
 
 class ShoppingcartAdmin(admin.ModelAdmin):
-    list_display = ('id', 'siteuser', 'recipe')
+    list_display = ('id', 'user', 'recipe')
 
 
 class TagAdmin(admin.ModelAdmin):
@@ -66,5 +61,4 @@ admin.site.register(Favorite, FavoriteAdmin)
 admin.site.register(Ingredient, IngredientAdmin)
 admin.site.register(Recipe, RecipeAdmin)
 admin.site.register(Shoppingcart, ShoppingcartAdmin)
-admin.site.register(Subscribe, SubscribeAdmin)
 admin.site.register(Tag, TagAdmin)
