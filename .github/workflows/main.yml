@@ -23,7 +23,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: 3.10-slim
+        python-version: '3.10'
     
     - name: Install dependencies
       run: |
@@ -39,4 +39,4 @@ jobs:
         DB_PORT: 5432
         SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
       run: |
-        python -m flake8 backend/
+        python -m flake8 ./backend/
