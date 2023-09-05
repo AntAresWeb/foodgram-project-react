@@ -1,11 +1,11 @@
 version: '3.8'
 
-name: food 
+name: foodgram
 
 volumes:
-  db:
-  static:
-  media:
+  db_vol:
+  static_vol:
+  media_vol:
 
 services:
   db:
@@ -14,21 +14,21 @@ services:
     ports:
       - 5432:5432
     volumes:
-      - db:/var/lib/postgresql/data
+      - db_vol:/var/lib/postgresql/data
   backend:
-    build: ../backend/
-    env_file: ../.env
+    image: antaresweb/foodgram_backend
+    env_file: .env
     depends_on:
       - db
-    command: cp -r /app/static/. /static/backend/.
     volumes:
-      - media:/app/media
+      - media_vol:/app/media
+      - static_vol:/app/static
   frontend:
-    build: ../frontend
+    image: antaresweb/foodgram_frontend
     command:
       cp -r /app/build/. /static/frontend/.
     volumes:
-      - static:static:/static/
+      - static_vol:static/
   nginx:
     build: ../infra
     depends_on:
