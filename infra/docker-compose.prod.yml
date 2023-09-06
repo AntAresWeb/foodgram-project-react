@@ -8,35 +8,41 @@ volumes:
   media_vol:
 
 services:
-  db:
+
+  postgres:
     image: postgres:13.10
     env_file: ../.env
     ports:
       - 5432:5432
     volumes:
       - db_vol:/var/lib/postgresql/data
+
   backend:
-    image: antaresweb/foodgram_backend
-    env_file: .env
+    image: antaresweb/foodgram-backend
+    env_file: ../.env
     depends_on:
-      - db
+      - postgres
+    expose:
+      - 8008
+    ports:
+      - "8008:8008"
     volumes:
       - media_vol:/app/media
       - static_vol:/app/static
+  
   frontend:
-    image: antaresweb/foodgram_frontend
-    command:
-      cp -r /app/build/. /static/frontend/.
+    image: antaresweb/foodgram-frontend
+    command: cp -r /app/build/. /static/
     volumes:
-      - static_vol:static/
+      - static_vol:/static
+  
   nginx:
-    build: ../infra
+    image: nginx:1.22.1
     depends_on:
       - backend
-      - frontend
-    command: cp /etc/nginx/nginx.conf /static/nginx/nginx.conf
     ports:
-      - 8080:80
+      - 80:80
     volumes:
-      - static:/static/
-      - media:/media/
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      - static_vol:/usr/share/nginx/html
+      - media_vol:/usr/share/nginx/html/media
