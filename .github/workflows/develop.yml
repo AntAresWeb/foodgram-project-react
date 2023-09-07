@@ -39,4 +39,4 @@ jobs:
         DB_PORT: 5432
         SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
       run: |
-        python -m flake8 ./backend/
+        python -m flake8 backend

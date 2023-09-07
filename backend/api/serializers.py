@@ -1,10 +1,9 @@
+import core.constants as const
 from django.db.models import Count
 from drf_extra_fields.fields import Base64ImageField
+from recipes.models import Content, Ingredient, Recipe, Tag, User
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
-
-import core.constants as const
-from recipes.models import Content, Ingredient, Recipe, Tag, User
 from users.models import Subscribe
 
 

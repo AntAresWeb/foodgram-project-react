@@ -1,6 +1,5 @@
-from rest_framework import filters
-
 from recipes.models import Favorite, Shoppingcart
+from rest_framework import filters
 
 
 class AuthorFilterBackend(filters.BaseFilterBackend):
