@@ -13,7 +13,7 @@ services:
   backend:
     build:
       context: ../backend
-      dockerfile: ../backend/Dockerfile
+      dockerfile: ../backend/Dockerfile.prod
     env_file: ../.env
     depends_on:
       - db
