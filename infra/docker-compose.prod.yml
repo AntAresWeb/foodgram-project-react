@@ -11,13 +11,13 @@ services:
 
   postgres:
     image: postgres:13.10
-    env_file: .env
+    env_file: ../.env
     volumes:
       - db_vol:/var/lib/postgresql/data
 
   backend:
     image: antaresweb/foodgram-backend
-    env_file: .env
+    env_file: ../.env
     depends_on:
       - postgres
     expose:
