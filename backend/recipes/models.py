@@ -1,9 +1,10 @@
-import core.constants as const
 from colorfield.fields import ColorField
 from django.contrib.auth import get_user_model
 from django.core.validators import (MaxValueValidator, MinValueValidator,
                                     RegexValidator)
 from django.db import models
+
+import core.constants as const
 
 User = get_user_model()
 
