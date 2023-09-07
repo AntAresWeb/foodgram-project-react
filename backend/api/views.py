@@ -106,7 +106,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         recipe = get_object_or_404(Recipe, id=pk)
         if request.method == 'DELETE':
             try:
-                Shoppingcart.objects.get(siteuser=user, recipe=recipe).delete()
+                Shoppingcart.objects.get(user=user, recipe=recipe).delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
             except Shoppingcart.DoesNotExist:
                 return Response(
@@ -117,13 +117,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
         if request.method == 'POST':
             try:
                 favorite = Shoppingcart.objects.get(
-                    siteuser=user, recipe=recipe)
+                    user=user, recipe=recipe)
                 return Response(
                     {'detail': 'Этот рецепт уже есть в корзине.'},
                     status=status.HTTP_400_BAD_REQUEST)
             except Shoppingcart.DoesNotExist:
                 favorite = Shoppingcart.objects.create(
-                    siteuser=user, recipe=recipe)
+                    user=user, recipe=recipe)
                 serialiser = RecipeShortSerializer(
                     instance=favorite.recipe, many=False)
                 return Response(serialiser.data,
@@ -135,7 +135,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         recipe = get_object_or_404(Recipe, id=pk)
         if request.method == 'DELETE':
             try:
-                Favorite.objects.get(siteuser=user, recipe=recipe).delete()
+                Favorite.objects.get(user=user, recipe=recipe).delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
             except Favorite.DoesNotExist:
                 return Response(
@@ -145,13 +145,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         if request.method == 'POST':
             try:
-                favorite = Favorite.objects.get(siteuser=user, recipe=recipe)
+                favorite = Favorite.objects.get(user=user, recipe=recipe)
                 return Response(
                     {'detail': 'Этот рецепт уже есть в избранных.'},
                     status=status.HTTP_400_BAD_REQUEST)
             except Favorite.DoesNotExist:
                 favorite = Favorite.objects.create(
-                    siteuser=user, recipe=recipe)
+                    user=user, recipe=recipe)
                 serialiser = RecipeShortSerializer(
                     instance=favorite.recipe, many=False)
                 return Response(serialiser.data,
@@ -219,7 +219,7 @@ class UserViewSet(mixins.CreateModelMixin,
 
         if request.method == 'DELETE':
             try:
-                Subscribe.objects.get(siteuser=user, author=author).delete()
+                Subscribe.objects.get(user=user, author=author).delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
             except Subscribe.DoesNotExist:
                 return Response(
@@ -233,13 +233,13 @@ class UserViewSet(mixins.CreateModelMixin,
                     {'detail': 'Нельзя подписаться на себя.'},
                     status=status.HTTP_400_BAD_REQUEST)
             try:
-                subscribe = Subscribe.objects.get(siteuser=user, author=author)
+                subscribe = Subscribe.objects.get(user=user, author=author)
                 return Response(
                     {'detail': 'Подписка уже есть.'},
                     status=status.HTTP_400_BAD_REQUEST)
             except Subscribe.DoesNotExist:
                 subscribe = Subscribe.objects.create(
-                    siteuser=user, author=author)
+                    user=user, author=author)
                 serialiser = SubscribeSerializer(
                     instance=subscribe, context=self.prepare_context
                 )
@@ -251,7 +251,7 @@ class UserViewSet(mixins.CreateModelMixin,
     def subscriptions(self, request):
         recipes_limit = int(request.query_params.get('recipes_limit'))
         context = {'recipes_limit': recipes_limit}
-        queryset = Subscribe.objects.filter(siteuser=request.user)
+        queryset = Subscribe.objects.filter(user=request.user)
         page = self.paginate_queryset(queryset)
         if page is not None:
             serialiser = SubscribeSerializer(page, context=context, many=True)

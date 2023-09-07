@@ -1,37 +1,39 @@
 version: '3.8'
 
-name: devfood 
+name: foodgram
+
+volumes:
+  db_vol:
+  static_vol:
+  media_vol:
 
 services:
-  
-  db:
+
+  postgres:
     image: postgres:13.10
     env_file: ../.env
     volumes:
-      - db:/var/lib/postgresql/data
-  
+      - db_vol:/var/lib/postgresql/data
+
   backend:
-    build:
-      context: ../backend
-      dockerfile: ../backend/Dockerfile.prod
+    image: antaresweb/foodgram-backend
     env_file: ../.env
     depends_on:
-      - db
-    command: cp -r /app/
-    volumes:
-      - ../backend:/app
-      - static_vol:/app/static
-      - media_vol:/app/media
+      - postgres
     expose:
       - 8008
     ports:
       - "8008:8008"
-
-  frontend:
-    build: ../frontend
     volumes:
-      - static_vol:/app/build
-
+      - media_vol:/app/media
+      - static_vol:/app/static
+  
+  frontend:
+    image: antaresweb/foodgram-frontend
+    command: cp -r /app/build/. /static/
+    volumes:
+      - static_vol:/static
+  
   nginx:
     image: nginx:1.22.1
     depends_on:
@@ -40,13 +42,5 @@ services:
       - 80:80
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
-      - ../docs:/usr/share/nginx/html/api/docs
       - static_vol:/usr/share/nginx/html
       - media_vol:/usr/share/nginx/html/media
-
-volumes:
-  db:
-  static_vol:
-  media_vol:
-
-
