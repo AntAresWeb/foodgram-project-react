@@ -80,6 +80,12 @@ jobs:
             echo DB_HOST=${{ secrets.DB_HOST }} >> .env
             echo DB_PORT=${{ secrets.DB_PORT }} >> .env
             echo SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }} >> .env
+            sudo docker compose -f ./infra/docker-compose.prod.yml down
+            sudo docker container prune
+            sudo docker image rm antaresweb/foodgram-backend
+            sudo docker image rm antaresweb/foodgram-frontend
+            sudo docker compose -f ./infra/docker-compose.prod.yml up --build -d
+            sudo docker container prune
   send_message:
     runs-on: ubuntu-latest
     needs: deploy
