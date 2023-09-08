@@ -2,21 +2,26 @@ version: '3.8'
 
 name: devfood 
 
+volumes:
+  db_vol:
+  static_vol:
+  media_vol:
+
 services:
   
-  db:
+  postgres:
     image: postgres:13.10
     env_file: ../.env
     volumes:
       - db:/var/lib/postgresql/data
-  
+
   backend:
     build:
       context: ../backend
       dockerfile: ../backend/Dockerfile.prod
     env_file: ../.env
     depends_on:
-      - db
+      - postgres
     command: cp -r /app/
     volumes:
       - ../backend:/app
@@ -43,10 +48,3 @@ services:
       - ../docs:/usr/share/nginx/html/api/docs
       - static_vol:/usr/share/nginx/html
       - media_vol:/usr/share/nginx/html/media
-
-volumes:
-  db:
-  static_vol:
-  media_vol:
-
-
