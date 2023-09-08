@@ -20,7 +20,7 @@ class FavoritedFilterBackend(filters.BaseFilterBackend):
             return queryset
         if is_favorited == '1':
             recipes_id = Favorite.objects.filter(
-                siteuser=request.user).values('recipe__id')
+                user=request.user).values('recipe__id')
             if not recipes_id:
                 return queryset.none()
             else:
@@ -37,7 +37,7 @@ class ShoppingCartFilterBackend(filters.BaseFilterBackend):
             return queryset
         if in_shopcart == '1':
             recipes_id = Shoppingcart.objects.filter(
-                siteuser=request.user).values('recipe__id')
+                user=request.user).values('recipe__id')
             if not recipes_id:
                 return queryset.none()
             else:
