@@ -20,10 +20,6 @@ services:
     env_file: ../.env
     depends_on:
       - postgres
-    expose:
-      - 8008
-    ports:
-      - "8008:8008"
     volumes:
       - media_vol:/app/media
       - static_vol:/app/static
