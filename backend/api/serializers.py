@@ -237,7 +237,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
                 f'В списке тэгов присутствуют дубликаты c id = {dup_ids}'
             )
         return value
-    
+
     def validate_name(self, value):
         mask = '[a-zA-Zа-яА-Я]'
         if not bool(re.search(mask, value)):
