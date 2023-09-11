@@ -1,3 +1,5 @@
+import re
+
 from django.db.models import Count
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
@@ -150,6 +152,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         default=serializers.CurrentUserDefault()
     )
     image = Base64ImageField(required=False)
+    name = serializers.CharField()
 
     class Meta:
         model = Recipe
@@ -234,6 +237,13 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
                 f'В списке тэгов присутствуют дубликаты c id = {dup_ids}'
             )
         return value
+    
+    def validate_name(self, value):
+        mask = '[a-zA-Zа-яА-Я]'
+        if not bool(re.search(mask, value)):
+            raise serializers.ValidationError(
+                'Наименование рецепта не содержит букв. Это неправильно!'
+            )
 
 
 class RecipeShortSerializer(serializers.ModelSerializer):
