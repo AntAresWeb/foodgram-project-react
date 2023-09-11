@@ -22,15 +22,10 @@ services:
     env_file: ../.env
     depends_on:
       - postgres
-    command: cp -r /app/
     volumes:
       - ../backend:/app
       - static_vol:/app/static
       - media_vol:/app/media
-    expose:
-      - 8008
-    ports:
-      - "8008:8008"
 
   frontend:
     build: ../frontend
