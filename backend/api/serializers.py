@@ -201,6 +201,8 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
                 content.get('id'),
                 through_defaults={'amount': content.get('amount')}
             )
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
 
         instance.save()
         return instance
