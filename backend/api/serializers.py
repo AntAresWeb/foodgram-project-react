@@ -244,6 +244,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 'Наименование рецепта не содержит букв. Это неправильно!'
             )
+        return value
 
 
 class RecipeShortSerializer(serializers.ModelSerializer):
