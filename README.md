@@ -36,12 +36,6 @@
 - Андрей Давыдов (aka AntAres)
 
 # Стэк
-[![Python][Python-badge]][Python-url]
-[![Django][Django-badge]][Django-url]
-[![Docker][Docker-badge]][Docker-url]
-[![Postgres][Postgres-badge]][Postgres-url]
-[![Nginx][Nginx-badge]][Nginx-url]
-
 - Python 3.10
 - Django 3.2 + REST API
 - Docker (with compose)
